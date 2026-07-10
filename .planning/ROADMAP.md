@@ -10,7 +10,7 @@ Save Manager is a lightweight personal savings tracking system built on top of G
 - Integer phases (1, 2, 3): Planned milestone work
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
-- [ ] **Phase 1: DB & clasp Project Setup** - Setup Google Sheets database schema and local clasp synchronization.
+- [x] **Phase 1: DB & clasp Project Setup** - Setup Google Sheets database schema and local clasp synchronization.
 - [ ] **Phase 2: Backend DB Operations & Calculations** - Build backend CRUD functions, LockService guards, and expected interest calculations.
 - [ ] **Phase 3: Telegram Bot Webhook Integration** - Connect Telegram Bot API webhooks and set up daily maturity alerts cron job.
 - [ ] **Phase 4: Frontend UI (TWA) & Auth** - Create the single-file Vite/TS/Tailwind SPA with Telegram Apps SDK integration and deposit forms.
@@ -30,7 +30,7 @@ Save Manager is a lightweight personal savings tracking system built on top of G
 
 Plans:
 - [x] 01-01: Setup Google Sheet database schema and timezone configurations
-- [ ] 01-02: Configure clasp development environment and basic doGet test script
+- [x] 01-02: Configure clasp development environment and basic doGet test script
 
 ### Phase 2: Backend DB Operations & Calculations
 **Goal**: Develop server-side GAS operations for adding deposits and reading user data with concurrency guards and interest calculation.
@@ -94,7 +94,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. DB & clasp Project Setup | 1/2 | Executing | - |
+| 1. DB & clasp Project Setup | 2/2 | Completed | 2026-07-10 |
 | 2. Backend DB Operations & Calculations | 0/2 | Not started | - |
 | 3. Telegram Bot Webhook Integration | 0/2 | Not started | - |
 | 4. Frontend UI (TWA) & Auth | 0/3 | Not started | - |
