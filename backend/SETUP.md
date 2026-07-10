@@ -52,6 +52,39 @@ Dự án này được cấu hình để đồng bộ code từ máy local lên 
    - **Cách 1 (Nếu đã có sẵn script)**: Hãy copy **Script ID** từ phần **Project Settings** trên Apps Script editor và thay thế vào trường `scriptId` trong file `backend/.clasp.json` thủ công.
    - **Cách 2 (Nếu muốn tạo script mới)**: Di chuyển vào thư mục `backend/` và chạy lệnh `clasp create --type standalone` để clasp tự tạo dự án mới và tự động cập nhật `scriptId` trong `.clasp.json`.
 
+## 6. Xác thực triển khai (clasp Push & Deploy)
+
+Sau khi cấu hình Script ID thành công ở bước 5, bạn có thể kiểm tra khả năng đẩy code lên GAS cloud và triển khai chạy thử:
+
+1. Đảm bảo bạn đã đăng nhập clasp ở local:
+   ```bash
+   clasp login
+   ```
+2. Đẩy toàn bộ code từ thư mục local lên GAS cloud:
+   ```bash
+   cd backend && clasp push
+   ```
+3. Tạo một deployment mới cho Web App:
+   ```bash
+   clasp deploy --description "Phase 1 test"
+   ```
+4. Xem danh sách deployment để lấy URL:
+   ```bash
+   clasp deployments
+   ```
+5. Kiểm tra hoạt động (Verification):
+   - Mở link Web App URL có đuôi `/exec` (ví dụ: `https://script.google.com/.../exec`) trên trình duyệt.
+   - Bạn sẽ nhận được kết quả dạng JSON:
+     ```json
+     {
+       "status": "ok",
+       "message": "Save Manager backend is running",
+       "timestamp": "2026-07-10T02:00:00.000Z",
+       "timezone": "Asia/Ho_Chi_Minh"
+     }
+     ```
+   - **Mẹo**: Sử dụng link đuôi `/dev` thay vì `/exec` trong lúc phát triển để tránh GAS caching response của code cũ.
+
 ---
 
 > [!IMPORTANT]
