@@ -469,9 +469,9 @@ function executeRolloverDeposit(sheets, payload) {
 
 *Bảng log này trống. Tất cả các quyết định cấu trúc dữ liệu và API đã được xác thực hoàn toàn thông qua tài liệu yêu cầu (REQUIREMENTS.md) và file quyết định (CONTEXT.md).*
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Vấn đề bảo mật API đầu cuối (doPost)**
+1. **Vấn đề bảo mật API đầu cuối (doPost)** — RESOLVED: Sử dụng kiểm tra cơ bản v1, đẩy HMAC sang v2/Phase 4.
    - *Những gì đã biết:* Hiện tại ứng dụng chưa cài đặt kiểm tra bảo mật chữ ký HMAC cho client-server để phục vụ mục tiêu đơn giản hóa trong v1.
    - *Những gì chưa rõ:* Bất kỳ ai biết được URL Web App `/exec` đều có thể thực hiện POST dữ liệu giả mạo nếu đoán được `username_bankcode`.
    - *Khuyến nghị:* Ở Phase 2, backend chỉ thực hiện kiểm tra cơ bản. Các khâu xác thực bảo mật nâng cao (chữ ký `initData` của Telegram Bot) đã được đẩy sang các Phase sau (Phase 4 / v2) và không cản trước việc phát triển cốt lõi ở Phase này.

@@ -52,8 +52,8 @@ Plans:
 
 Plans:
 
-- [ ] 02-01: Implement database operations (read/write deposits) and calculations in Apps Script
-- [ ] 02-02: Build doPost endpoint controller with LockService concurrency guards
+- [ ] 02-01-PLAN.md — Implement database operations (read/write deposits) and calculations in Apps Script
+- [ ] 02-02-PLAN.md — Build doPost endpoint controller with LockService concurrency guards
 
 ### Phase 3: Telegram Bot Webhook Integration
 
