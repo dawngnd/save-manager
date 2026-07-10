@@ -1,0 +1,1 @@
+{"content":"As of 2026, @google/clasp (v3.3.0) is the standard CLI for local Apps Script development. clasp 3+ drops native TS transpilation, requiring external build tools like Vite. Node.js version >= 20.0.0 is required.","source":"web","provider":"context7","confidence":"HIGH","fetched_at":"2026-07-10T01:23:09.918Z","ttl":86400000,"kind":"docs"}
