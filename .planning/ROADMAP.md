@@ -29,7 +29,7 @@ Save Manager is a lightweight personal savings tracking system built on top of G
 **Plans**: 2 plans
 
 Plans:
-- [ ] 01-01: Setup Google Sheet database schema and timezone configurations
+- [x] 01-01: Setup Google Sheet database schema and timezone configurations
 - [ ] 01-02: Configure clasp development environment and basic doGet test script
 
 ### Phase 2: Backend DB Operations & Calculations
@@ -94,7 +94,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. DB & clasp Project Setup | 0/2 | Not started | - |
+| 1. DB & clasp Project Setup | 1/2 | Executing | - |
 | 2. Backend DB Operations & Calculations | 0/2 | Not started | - |
 | 3. Telegram Bot Webhook Integration | 0/2 | Not started | - |
 | 4. Frontend UI (TWA) & Auth | 0/3 | Not started | - |
