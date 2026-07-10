@@ -12,6 +12,7 @@ interface ApiPayload {
 export async function callBackendApi<T = any>(payload: Omit<ApiPayload, 'initData'>): Promise<T> {
   const session = initializeTelegramSDK();
   const fullPayload: ApiPayload = {
+    action: payload.action,
     ...payload,
     initData: session.rawInitData,
   };
