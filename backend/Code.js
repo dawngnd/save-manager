@@ -94,6 +94,7 @@ function doGet(e) {
  * @returns {GoogleAppsScript.Content.TextOutput}
  */
 function doPost(e) {
+  throw new Error("TDD RED Phase");
   try {
     if (!e || !e.postData || !e.postData.contents) {
       return buildJsonResponse("error", "Dữ liệu yêu cầu trống.");

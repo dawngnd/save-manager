@@ -32,6 +32,8 @@ function runTests() {
     testExecuteGetDeposits();
     testExecuteAddDeposit();
     testExecuteRolloverDeposit();
+    testDoPostRouting();
+    testLockServiceBehavior();
     Logger.log("=== TẤT CẢ KIỂM THỬ ĐÃ THÀNH CÔNG ===");
   } catch (error) {
     Logger.log("❌ KIỂM THỬ THẤT BẠI: " + error.toString());
@@ -160,7 +162,8 @@ function testExecuteGetDeposits() {
   sheets.deposits.appendRow(["dep-1", 10000000, 6.0, "active", 600000, "10/07/2026", "10/07/2027", "user1_vcb"]);
   sheets.deposits.appendRow(["dep-2", 5000000, 5.0, "active", 250000, "11/07/2026", "11/07/2027", "user2_tcb"]);
   
-  const response = executeGetDeposits(sheets, { action: "get_deposits", username_bankcode: "user1_vcb" });
+  const rawResponse = executeGetDeposits(sheets, { action: "get_deposits", username_bankcode: "user1_vcb" });
+  const response = getResponseData(rawResponse);
   assert(response.status === "success", "Response status phải là success");
   assert(response.data.length === 1, "Chỉ lấy được 1 khoản gửi");
   assert(response.data[0].id === "dep-1", "ID khoản gửi phải là dep-1");
@@ -181,7 +184,8 @@ function testExecuteAddDeposit() {
     }
   };
   
-  const response = executeAddDeposit(sheets, payload);
+  const rawResponse = executeAddDeposit(sheets, payload);
+  const response = getResponseData(rawResponse);
   assert(response.status === "success", "Thêm khoản gửi thành công");
   assert(response.data.amount === 10000000, "Số tiền khớp");
   assert(response.data.expected_interest === 600000, "Lãi suất tính toán khớp");
@@ -203,7 +207,8 @@ function testExecuteRolloverDeposit() {
     maturity_at: "10/07/2028"
   };
   
-  const response = executeRolloverDeposit(sheets, payload);
+  const rawResponse = executeRolloverDeposit(sheets, payload);
+  const response = getResponseData(rawResponse);
   assert(response.status === "success", "Tái tục thành công");
   assert(response.data.old_deposit.id === "dep-1", "ID cũ khớp");
   assert(response.data.old_deposit.status === "rolled_over", "Trạng thái cũ đổi sang rolled_over");
@@ -212,4 +217,179 @@ function testExecuteRolloverDeposit() {
   assert(response.data.new_deposit.amount === 12000000, "Số tiền mới khớp");
   assert(response.data.new_deposit.status === "active", "Trạng thái mới hoạt động");
   assert(sheets._rawDeposits.length === 2, "Thêm 1 dòng mới vào sheet");
+}
+
+/**
+ * Trích xuất dữ liệu phản hồi JSON bất kể có hay không có ContentService wrapper.
+ */
+function getResponseData(response) {
+  if (response && typeof response.getContent === 'function') {
+    return JSON.parse(response.getContent());
+  }
+  return response;
+}
+
+function testDoPostRouting() {
+  Logger.log("Chạy: testDoPostRouting");
+  
+  // Backup
+  const originalInitSheets = initializeSheets;
+  const mockSheets = createMockSheets();
+  initializeSheets = () => mockSheets;
+  
+  const originalLockService = typeof LockService !== 'undefined' ? LockService : null;
+  global.LockService = {
+    getScriptLock: () => ({
+      tryLock: () => true,
+      releaseLock: () => {}
+    })
+  };
+  
+  try {
+    // 1. Dữ liệu trống
+    let response = getResponseData(doPost(null));
+    assert(response.status === "error", "Dữ liệu trống phải trả về error");
+    assert(response.message.indexOf("Dữ liệu yêu cầu trống") !== -1, "Thông báo lỗi trống");
+    
+    // 2. Action không hợp lệ
+    const invalidEvent = {
+      postData: {
+        contents: JSON.stringify({ action: "invalid_action" })
+      }
+    };
+    response = getResponseData(doPost(invalidEvent));
+    assert(response.status === "error", "Action không hợp lệ phải trả về error");
+    assert(response.message.indexOf("không được hỗ trợ") !== -1, "Thông báo lỗi action");
+    
+    // 3. Action get_deposits
+    const getEvent = {
+      postData: {
+        contents: JSON.stringify({
+          action: "get_deposits",
+          username_bankcode: "user1_vcb"
+        })
+      }
+    };
+    response = getResponseData(doPost(getEvent));
+    assert(response.status === "success", "get_deposits phải thành công");
+    
+    // 4. Action add_deposit
+    const addEvent = {
+      postData: {
+        contents: JSON.stringify({
+          action: "add_deposit",
+          username_bankcode: "user1_vcb",
+          data: { amount: 1000000, interest_rate: 6.0, created_at: "10/07/2026", maturity_at: "10/07/2027" }
+        })
+      }
+    };
+    response = getResponseData(doPost(addEvent));
+    assert(response.status === "success", "add_deposit phải thành công");
+    
+    // 5. Action rollover_deposit
+    const newDepId = response.data.id;
+    const rolloverEvent = {
+      postData: {
+        contents: JSON.stringify({
+          action: "rollover_deposit",
+          id: newDepId,
+          new_amount: 1200000,
+          new_interest_rate: 5.5,
+          created_at: "10/07/2027",
+          maturity_at: "10/07/2028"
+        })
+      }
+    };
+    response = getResponseData(doPost(rolloverEvent));
+    assert(response.status === "success", "rollover_deposit phải thành công");
+    
+  } finally {
+    // Restore
+    initializeSheets = originalInitSheets;
+    if (originalLockService) {
+      global.LockService = originalLockService;
+    } else {
+      delete global.LockService;
+    }
+  }
+}
+
+function testLockServiceBehavior() {
+  Logger.log("Chạy: testLockServiceBehavior");
+  
+  const originalLockService = typeof LockService !== 'undefined' ? LockService : null;
+  
+  let tryLockResult = true;
+  let releaseLockCalled = false;
+  let getScriptLockCalled = false;
+  
+  global.LockService = {
+    getScriptLock: function() {
+      getScriptLockCalled = true;
+      return {
+        tryLock: function(timeout) {
+          assert(timeout === 10000, "tryLock timeout phải là 10000ms");
+          return tryLockResult;
+        },
+        releaseLock: function() {
+          releaseLockCalled = true;
+        }
+      };
+    }
+  };
+  
+  const originalInitSheets = initializeSheets;
+  const mockSheets = createMockSheets();
+  initializeSheets = () => mockSheets;
+  
+  try {
+    // 1. Chế độ lock thành công
+    tryLockResult = true;
+    releaseLockCalled = false;
+    getScriptLockCalled = false;
+    
+    const payload = {
+      action: "add_deposit",
+      username_bankcode: "user1_vcb",
+      data: { amount: 1000000, interest_rate: 6.0, created_at: "10/07/2026", maturity_at: "10/07/2027" }
+    };
+    
+    const resSuccess = getResponseData(handleWriteActionWithLock("add_deposit", payload));
+    assert(resSuccess.status === "success", "Khi lock thành công, trả về success");
+    assert(getScriptLockCalled, "Phải gọi getScriptLock");
+    assert(releaseLockCalled, "Phải giải phóng lock khi thành công");
+    
+    // 2. Chế độ lock thất bại
+    tryLockResult = false;
+    releaseLockCalled = false;
+    getScriptLockCalled = false;
+    
+    const resFail = getResponseData(handleWriteActionWithLock("add_deposit", payload));
+    assert(resFail.status === "error", "Khi lock thất bại, trả về error");
+    assert(resFail.message.indexOf("Hệ thống đang bận") !== -1, "Thông điệp bận chính xác");
+    assert(getScriptLockCalled, "Phải gọi getScriptLock");
+    assert(!releaseLockCalled, "Không được gọi releaseLock nếu tryLock trả về false");
+    
+    // 3. Chế độ có lỗi nghiệp vụ xảy ra
+    tryLockResult = true;
+    releaseLockCalled = false;
+    
+    const badPayload = {
+      action: "add_deposit",
+      username_bankcode: "user1_vcb",
+      data: { amount: -500 }
+    };
+    
+    const resError = getResponseData(handleWriteActionWithLock("add_deposit", badPayload));
+    assert(resError.status === "error", "Có lỗi nghiệp vụ, trả về error");
+    assert(releaseLockCalled, "Vẫn phải giải phóng lock khi có lỗi xảy ra");
+    
+  } finally {
+    initializeSheets = originalInitSheets;
+    if (originalLockService) {
+      global.LockService = originalLockService;
+    } else {
+      delete global.LockService;
+    }
+  }
 }
