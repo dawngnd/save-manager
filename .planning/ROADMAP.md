@@ -86,9 +86,16 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
+**Wave 1**
 
 - [ ] 04-01: Scaffold Vite + TS + Tailwind SPA and configure vite-plugin-singlefile bundler
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 04-02: Integrate @telegram-apps/sdk and implement basic login/configuration screen
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 04-03: Create active deposit list view and add deposit interactive form
 
 ### Phase 5: Charts & Rollover Mechanics
