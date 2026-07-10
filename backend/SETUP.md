@@ -43,6 +43,15 @@ Ví dụ, nếu URL là `https://docs.google.com/spreadsheets/d/1abc123xyz789/ed
    - Sheet `Deposits`:
      - Các cột: `id`, `amount`, `interest_rate`, `status`, `expected_interest`, `created_at`, `maturity_at`, `user_bankcode`
 
+## 5. Đồng bộ dự án bằng clasp (Tùy chọn cho Nhà phát triển)
+
+Dự án này được cấu hình để đồng bộ code từ máy local lên Google Apps Script bằng công cụ `clasp` của Google.
+
+1. File cấu hình mặc định là `backend/.clasp.json` đã được tạo sẵn với placeholder `"YOUR_SCRIPT_ID_HERE"`.
+2. Để kết nối dự án local với dự án script thực tế trên Apps Script:
+   - **Cách 1 (Nếu đã có sẵn script)**: Hãy copy **Script ID** từ phần **Project Settings** trên Apps Script editor và thay thế vào trường `scriptId` trong file `backend/.clasp.json` thủ công.
+   - **Cách 2 (Nếu muốn tạo script mới)**: Di chuyển vào thư mục `backend/` và chạy lệnh `clasp create --type standalone` để clasp tự tạo dự án mới và tự động cập nhật `scriptId` trong `.clasp.json`.
+
 ---
 
 > [!IMPORTANT]
