@@ -6,6 +6,7 @@ interface ApiPayload {
   username_bankcode?: string;
   telegram_chat_id?: number;
   data?: any;
+  [key: string]: any;
 }
 
 export async function callBackendApi<T = any>(payload: Omit<ApiPayload, 'initData'>): Promise<T> {
