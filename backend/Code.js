@@ -572,3 +572,154 @@ function buildJsonResponse(status, messageOrData) {
   return ContentService.createTextOutput(JSON.stringify(responseObj))
     .setMimeType(ContentService.MimeType.JSON);
 }
+
+/**
+ * Lập lịch trigger quét đáo hạn lúc 7:00 AM - 8:00 AM.
+ * Dọn dẹp trigger cũ cùng tên hàm để tránh trùng lặp.
+ */
+function setupDailyTrigger() {
+  const triggerName = "checkMaturityAndSendAlerts";
+  
+  if (typeof ScriptApp === 'undefined') {
+    Logger.log("Môi trường Node.js: Bỏ qua tạo trigger.");
+    return;
+  }
+  
+  const triggers = ScriptApp.getProjectTriggers();
+  for (let i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === triggerName) {
+      ScriptApp.deleteTrigger(triggers[i]);
+    }
+  }
+  
+  ScriptApp.newTrigger(triggerName)
+    .timeBased()
+    .everyDays(1)
+    .atHour(7)
+    .create();
+  Logger.log("Đã thiết lập trigger chạy hàng ngày từ 7:00 AM - 8:00 AM.");
+}
+
+/**
+ * Quét các khoản tiết kiệm active/matured sắp đáo hạn (<= 3 ngày) hoặc quá hạn,
+ * gom nhóm theo telegram_chat_id và gửi thông báo tổng hợp qua Telegram Bot.
+ */
+function checkMaturityAndSendAlerts() {
+  Logger.log("Bắt đầu quét các khoản tiết kiệm đáo hạn...");
+  const sheets = initializeSheets();
+  const depositsSheet = sheets.deposits;
+  const usersSheet = sheets.users;
+  
+  const lastRow = depositsSheet.getLastRow();
+  if (lastRow <= 1) {
+    Logger.log("Không có dữ liệu khoản gửi để quét.");
+    return;
+  }
+  
+  // 1. Tạo bản đồ tra cứu chat_id từ bảng Users
+  const userChatMap = {};
+  const usersLastRow = usersSheet.getLastRow();
+  if (usersLastRow > 1) {
+    const usersData = usersSheet.getRange(2, 1, usersLastRow - 1, 2).getValues();
+    for (let i = 0; i < usersData.length; i++) {
+      const username = usersData[i][0];
+      const chatId = usersData[i][1];
+      if (username && chatId) {
+        userChatMap[username] = chatId;
+      }
+    }
+  }
+  
+  // 2. Lấy thời điểm hiện tại nửa đêm (00:00:00) tại múi giờ local của Google Sheet (GMT+7)
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+  
+  // Map gom nhóm cảnh báo theo chat ID
+  const alertsByChatId = {};
+  
+  // 3. Quét các dòng trong sheet Deposits
+  const deposits = depositsSheet.getRange(2, 1, lastRow - 1, 8).getValues();
+  for (let i = 0; i < deposits.length; i++) {
+    const id = deposits[i][0];
+    const amount = Number(deposits[i][1]);
+    const rate = Number(deposits[i][2]);
+    const status = deposits[i][3];
+    const expectedInterest = Number(deposits[i][4]);
+    const createdAt = deposits[i][5];
+    const maturityAtStr = deposits[i][6];
+    const userBankcode = deposits[i][7];
+    
+    // Chỉ xử lý các khoản active hoặc matured chưa giải quyết
+    if (status === "active" || status === "matured") {
+      try {
+        const maturityDate = parseDateString(maturityAtStr);
+        const diffTime = maturityDate.getTime() - today.getTime();
+        const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24)); // làm tròn số ngày
+        
+        // Cảnh báo nếu sắp đáo hạn trong vòng 3 ngày tới hoặc đã quá hạn
+        if (diffDays <= 3) {
+          const chatId = userChatMap[userBankcode];
+          if (!chatId) {
+            Logger.log(`Warning: Không tìm thấy chat ID cho user ${userBankcode}. Bỏ qua thông báo.`);
+            continue;
+          }
+          
+          if (!alertsByChatId[chatId]) {
+            alertsByChatId[chatId] = [];
+          }
+          alertsByChatId[chatId].push({
+            id: id,
+            amount: amount,
+            rate: rate,
+            expectedInterest: expectedInterest,
+            maturityAt: maturityAtStr,
+            diffDays: diffDays,
+            status: status
+          });
+        }
+      } catch (err) {
+        Logger.log(`Lỗi xử lý định dạng ngày cho khoản ${id}: ` + err.toString());
+      }
+    }
+  }
+  
+  // 4. Gửi thông báo batch cho từng chat ID
+  for (const chatId in alertsByChatId) {
+    const items = alertsByChatId[chatId];
+    if (items.length === 0) continue;
+    
+    let messageText = "⚠️ **CẢNH BÁO ĐÁO HẠN TIẾT KIỆM** ⚠️\n\n";
+    messageText += `Bạn có ${items.length} khoản tiết kiệm cần lưu ý:\n\n`;
+    
+    items.forEach((item, index) => {
+      const formattedAmount = Number(item.amount).toLocaleString("vi-VN") + " VND";
+      let statusText = "";
+      if (item.diffDays < 0) {
+        statusText = `ĐÃ QUÁ HẠN ${Math.abs(item.diffDays)} NGÀY`;
+      } else if (item.diffDays === 0) {
+        statusText = "ĐÁO HẠN HÔM NAY";
+      } else {
+        statusText = `Còn ${item.diffDays} ngày`;
+      }
+      
+      messageText += `${index + 1}. **Khoản gửi:** ${formattedAmount}\n`;
+      messageText += `   - Lãi suất: ${item.rate}%\n`;
+      messageText += `   - Ngày đáo hạn: ${item.maturityAt} (${statusText})\n`;
+      messageText += `   - ID: \`${item.id}\`\n\n`;
+    });
+    
+    messageText += "Vui lòng mở Save Manager để thực hiện cập nhật hoặc tái tục các khoản gửi này.";
+    
+    const replyPayload = {
+      chat_id: chatId,
+      text: messageText,
+      parse_mode: "Markdown"
+    };
+    
+    const response = sendTelegramApi("sendMessage", replyPayload);
+    Logger.log(`Đã gửi cảnh báo tới chat ID ${chatId}. Response: ` + (response && typeof response.getContentText === 'function' ? response.getContentText() : JSON.stringify(response)));
+  }
+  
+  Logger.log("Hoàn thành quét đáo hạn.");
+}
+
