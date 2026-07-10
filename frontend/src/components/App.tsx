@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { UserSelector } from './UserSelector';
 import { DepositList } from './DepositList';
 import { DepositForm } from './DepositForm';
+import { RolloverForm } from './RolloverForm';
 import { callBackendApi } from '../api';
 import { Deposit } from '../types';
 
@@ -11,6 +12,8 @@ export const App: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isFormOpen, setIsFormOpen] = useState<boolean>(false);
+  const [isRolloverOpen, setIsRolloverOpen] = useState<boolean>(false);
+  const [rolloverDeposit, setRolloverDeposit] = useState<Deposit | null>(null);
 
   const fetchDeposits = async (username: string) => {
     try {
@@ -49,6 +52,11 @@ export const App: React.FC = () => {
     if (selectedUser) {
       fetchDeposits(selectedUser);
     }
+  };
+
+  const handleTriggerRollover = (deposit: Deposit) => {
+    setRolloverDeposit(deposit);
+    setIsRolloverOpen(true);
   };
 
   return (
@@ -106,7 +114,7 @@ export const App: React.FC = () => {
                 </button>
               </div>
             ) : (
-              <DepositList deposits={deposits} />
+              <DepositList deposits={deposits} onTriggerRollover={handleTriggerRollover} />
             )}
           </div>
 
@@ -126,6 +134,19 @@ export const App: React.FC = () => {
             usernameBankcode={selectedUser}
             onSuccess={handleRefresh}
           />
+
+          {/* Rollover Form Bottom Sheet */}
+          {rolloverDeposit && (
+            <RolloverForm
+              isOpen={isRolloverOpen}
+              onClose={() => {
+                setIsRolloverOpen(false);
+                setRolloverDeposit(null);
+              }}
+              oldDeposit={rolloverDeposit}
+              onSuccess={handleRefresh}
+            />
+          )}
         </div>
       )}
     </div>

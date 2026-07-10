@@ -6,9 +6,10 @@ import { calculateDaysBetween, parseClientDateString } from '../utils/interest';
 
 interface DepositListProps {
   deposits: Deposit[];
+  onTriggerRollover: (deposit: Deposit) => void;
 }
 
-export const DepositList: React.FC<DepositListProps> = ({ deposits }) => {
+export const DepositList: React.FC<DepositListProps> = ({ deposits, onTriggerRollover }) => {
   const [selectedDeposit, setSelectedDeposit] = useState<Deposit | null>(null);
 
   const formatCurrency = (value: number) => {
@@ -20,6 +21,18 @@ export const DepositList: React.FC<DepositListProps> = ({ deposits }) => {
       return calculateDaysBetween(start, end);
     } catch {
       return 0;
+    }
+  };
+
+  const isMaturedOrOverdue = (item: Deposit) => {
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayStr = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
+      const diffDays = calculateDaysBetween(todayStr, item.maturity_at);
+      return diffDays <= 0;
+    } catch {
+      return false;
     }
   };
 
@@ -123,12 +136,26 @@ export const DepositList: React.FC<DepositListProps> = ({ deposits }) => {
               </div>
             </div>
             
-            <button
-              onClick={() => setSelectedDeposit(null)}
-              className="w-full py-3 bg-[#2c3847] hover:bg-[#374657] text-[#f5f5f5] font-semibold rounded-xl transition cursor-pointer"
-            >
-              Đóng panel
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setSelectedDeposit(null)}
+                className="flex-1 py-3 bg-[#2c3847] hover:bg-[#374657] text-[#f5f5f5] font-semibold rounded-xl transition cursor-pointer text-center"
+              >
+                Đóng
+              </button>
+              {isMaturedOrOverdue(selectedDeposit) && (
+                <button
+                  onClick={() => {
+                    const depToRollover = selectedDeposit;
+                    setSelectedDeposit(null);
+                    onTriggerRollover(depToRollover);
+                  }}
+                  className="flex-1 py-3 bg-[#5288c1] hover:bg-[#4678ad] text-white font-semibold rounded-xl transition cursor-pointer text-center"
+                >
+                  Tái tục
+                </button>
+              )}
+            </div>
           </div>
         )}
       </BottomSheet>
