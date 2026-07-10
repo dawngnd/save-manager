@@ -12,7 +12,7 @@ Save Manager is a lightweight personal savings tracking system built on top of G
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
 - [x] **Phase 1: DB & clasp Project Setup** - Setup Google Sheets database schema and local clasp synchronization.
-- [ ] **Phase 2: Backend DB Operations & Calculations** - Build backend CRUD functions, LockService guards, and expected interest calculations.
+- [x] **Phase 2: Backend DB Operations & Calculations** - Build backend CRUD functions, LockService guards, and expected interest calculations. (completed 2026-07-10)
 - [ ] **Phase 3: Telegram Bot Webhook Integration** - Connect Telegram Bot API webhooks and set up daily maturity alerts cron job.
 - [ ] **Phase 4: Frontend UI (TWA) & Auth** - Create the single-file Vite/TS/Tailwind SPA with Telegram Apps SDK integration and deposit forms.
 - [ ] **Phase 5: Charts & Rollover Mechanics** - Build growth projection timeseries chart and execute rollover transaction workflow.
@@ -48,7 +48,7 @@ Plans:
   2. Adding a deposit via `doPost` creates a row in the `Deposits` sheet with auto-calculated expected interest based on the formulas.
   3. Concurrency test with simulated simultaneous writes executes sequentially without row overwrite errors using `LockService`.
 
-**Plans**: 1/2 plans executed
+**Plans**: 2/2 plans complete
 
 Plans:
 
@@ -116,7 +116,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. DB & clasp Project Setup | 2/2 | Complete    | 2026-07-10 |
-| 2. Backend DB Operations & Calculations | 1/2 | In Progress|  |
+| 2. Backend DB Operations & Calculations | 2/2 | Complete    | 2026-07-10 |
 | 3. Telegram Bot Webhook Integration | 0/2 | Not started | - |
 | 4. Frontend UI (TWA) & Auth | 0/3 | Not started | - |
 | 5. Charts & Rollover Mechanics | 0/2 | Not started | - |
