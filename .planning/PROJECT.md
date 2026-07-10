@@ -12,13 +12,12 @@ Quản lý chính xác trạng thái các khoản tiết kiệm, hỗ trợ tái
 
 ### Validated
 
-(None yet — ship to validate)
+- **DB-01**: Thiết lập Google Sheets làm database với 2 bảng (sheets) (Validated in Phase 1: DB & clasp Project Setup):
+  - `Users`: cột `username_bankcode` (khóa chính)
+  - `Deposits`: các cột `id` (khoản gửi), `amount` (số tiền gửi), `interest_rate` (% lãi suất dự tính), `status` (trạng thái), `expected_interest` (tiền lãi dự tính), `created_at` (ngày tạo), `maturity_at` (ngày đáo hạn), `user_bankcode` (liên kết bảng Users)
 
 ### Active
 
-- [ ] **DB-01**: Thiết lập Google Sheets làm database với 2 bảng (sheets):
-  - `Users`: cột `username_bankcode` (khóa chính)
-  - `Deposits`: các cột `id` (khoản gửi), `amount` (số tiền gửi), `interest_rate` (% lãi suất dự tính), `status` (trạng thái), `expected_interest` (tiền lãi dự tính), `created_at` (ngày tạo), `maturity_at` (ngày đáo hạn), `user_bankcode` (liên kết bảng Users)
 - [ ] **AUTH-01**: Xác thực người dùng bằng cách nhập thủ công `username_bankcode` trên giao diện Web App để truy cập dữ liệu cá nhân.
 - [ ] **DEP-01**: Thêm mới một khoản tiết kiệm với các thông tin: số tiền, % lãi suất, ngày tạo, ngày đáo hạn. Hệ thống tự động tính toán tiền lãi dự tính và lưu vào sheet.
 - [ ] **DEP-02**: Thực hiện tái tục (rollover) khi khoản tiết kiệm đáo hạn. Cho phép người dùng nhập thủ công số tiền gốc mới và lưu trữ lịch sử hoạt động/khoản cũ vào lịch sử.
@@ -46,7 +45,7 @@ Quản lý chính xác trạng thái các khoản tiết kiệm, hỗ trợ tái
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Sử dụng Google Sheets làm database | Dễ xem, chỉnh sửa trực tiếp, hoàn toàn miễn phí và tích hợp sâu với Google Apps Script. | — Pending |
+| Sử dụng Google Sheets làm database | Dễ xem, chỉnh sửa trực tiếp, hoàn toàn miễn phí và tích hợp sâu với Google Apps Script. | — Validated in Phase 1 |
 | Tương tác qua Telegram Web App thay vì Text Bot | Cung cấp giao diện đồ họa (chart, form nhập liệu) phong phú hơn nhiều so với tin nhắn text. | — Pending |
 | Nhập thủ công username/bankcode để đăng nhập | Tránh việc phụ thuộc chặt chẽ vào Chat ID Telegram, cho phép truy cập linh hoạt từ nhiều thiết bị/tài khoản Telegram nếu cần. | — Pending |
 
@@ -68,4 +67,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-10 after initialization*
+*Last updated: 2026-07-10 after Phase 1 completion*
