@@ -25,7 +25,7 @@ function initializeSheets() {
   }
   
   // Kiểm tra và set headers cho Users
-  const usersHeaders = ['username_bankcode'];
+  const usersHeaders = ['username_bankcode', 'telegram_chat_id'];
   if (usersSheet.getLastRow() === 0 || isHeaderEmpty(usersSheet, usersHeaders.length)) {
     usersSheet.getRange(1, 1, 1, usersHeaders.length).setValues([usersHeaders]);
   }
@@ -100,11 +100,33 @@ function doPost(e) {
     }
     
     const payload = JSON.parse(e.postData.contents);
+    
+    // Kiểm tra xem yêu cầu đến từ Telegram hay không
+    const isTelegramWebhook = payload.message || payload.callback_query;
+    
+    if (isTelegramWebhook) {
+      const properties = PropertiesService.getScriptProperties();
+      const webhookToken = properties.getProperty("WEBHOOK_TOKEN");
+      const requestToken = e.parameter && e.parameter.token;
+      
+      if (!webhookToken || requestToken !== webhookToken) {
+        Logger.log("Cảnh báo: Webhook request không có token hợp lệ.");
+        return buildJsonResponse("error", "Unauthorized access.");
+      }
+      return handleTelegramWebhook(payload);
+    }
+    
     const action = payload.action;
     
     // Yêu cầu chỉ đọc: Không sử dụng LockService để tránh nghẽn luồng đọc
     if (action === "get_deposits") {
       const sheets = initializeSheets();
+      
+      // Tự động liên kết Chat ID nếu có
+      if (payload.telegram_chat_id && payload.username_bankcode) {
+        linkTelegramChatId(sheets.users, payload.username_bankcode, payload.telegram_chat_id);
+      }
+      
       return executeGetDeposits(sheets, payload);
     }
     
@@ -275,8 +297,128 @@ function findOrCreateUser(usersSheet, usernameBankcode) {
       }
     }
   }
-  usersSheet.appendRow([usernameBankcode]);
+  usersSheet.appendRow([usernameBankcode, ""]);
   return true;
+}
+
+/**
+ * Liên kết hoặc cập nhật telegram_chat_id cho người dùng dựa trên username_bankcode.
+ * @param {GoogleAppsScript.Spreadsheet.Sheet} usersSheet
+ * @param {string} usernameBankcode
+ * @param {string|number} telegramChatId
+ */
+function linkTelegramChatId(usersSheet, usernameBankcode, telegramChatId) {
+  if (!usernameBankcode || !telegramChatId) return;
+  
+  const lastRow = usersSheet.getLastRow();
+  let userRowIndex = -1;
+  
+  if (lastRow > 1) {
+    const values = usersSheet.getRange(2, 1, lastRow - 1, 2).getValues();
+    for (let i = 0; i < values.length; i++) {
+      if (values[i][0] === usernameBankcode) {
+        userRowIndex = i + 2;
+        // Nếu chat_id đã khớp thì không cần cập nhật
+        if (values[i][1] === telegramChatId || String(values[i][1]) === String(telegramChatId)) {
+          return;
+        }
+        break;
+      }
+    }
+  }
+  
+  if (userRowIndex !== -1) {
+    // Cập nhật chat ID ở cột 2
+    usersSheet.getRange(userRowIndex, 2).setValue(telegramChatId);
+    Logger.log("Đã cập nhật telegram_chat_id cho user: " + usernameBankcode);
+  } else {
+    // Tạo mới user và liên kết chat ID
+    usersSheet.appendRow([usernameBankcode, telegramChatId]);
+    Logger.log("Đã tạo mới user và liên kết chat_id: " + usernameBankcode);
+  }
+}
+
+/**
+ * Đăng ký Webhook URL với Telegram Bot API. Chạy một lần để cấu hình.
+ */
+function setupWebhook() {
+  const properties = PropertiesService.getScriptProperties();
+  const botToken = properties.getProperty("TELEGRAM_BOT_TOKEN");
+  const webAppUrl = properties.getProperty("WEB_APP_URL");
+  const webhookToken = properties.getProperty("WEBHOOK_TOKEN");
+  
+  if (!botToken || !webAppUrl || !webhookToken) {
+    throw new Error("Chưa cấu hình đủ TELEGRAM_BOT_TOKEN, WEB_APP_URL hoặc WEBHOOK_TOKEN.");
+  }
+  
+  const registerUrl = `${webAppUrl}?token=${webhookToken}`;
+  const telegramUrl = `https://api.telegram.org/bot${botToken}/setWebhook`;
+  
+  const response = UrlFetchApp.fetch(telegramUrl, {
+    method: "post",
+    contentType: "application/json",
+    payload: JSON.stringify({
+      url: registerUrl,
+      allowed_updates: ["message"]
+    }),
+    muteHttpExceptions: true
+  });
+  
+  Logger.log("Kết quả đăng ký webhook: " + response.getContentText());
+}
+
+/**
+ * Gửi yêu cầu API đến Telegram Bot.
+ * @param {string} method
+ * @param {object} payload
+ * @returns {GoogleAppsScript.Content.TextOutput|object}
+ */
+function sendTelegramApi(method, payload) {
+  const properties = PropertiesService.getScriptProperties();
+  const botToken = properties.getProperty("TELEGRAM_BOT_TOKEN");
+  const url = `https://api.telegram.org/bot${botToken}/${method}`;
+  
+  return UrlFetchApp.fetch(url, {
+    method: "post",
+    contentType: "application/json",
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  });
+}
+
+/**
+ * Xử lý webhook update nhận được từ Telegram.
+ * @param {object} payload
+ * @returns {GoogleAppsScript.Content.TextOutput}
+ */
+function handleTelegramWebhook(payload) {
+  if (payload.message && payload.message.text) {
+    const chatId = payload.message.chat.id;
+    const text = payload.message.text.trim();
+    
+    if (text === "/start") {
+      const properties = PropertiesService.getScriptProperties();
+      const miniAppUrl = properties.getProperty("MINI_APP_URL");
+      
+      const replyPayload = {
+        chat_id: chatId,
+        text: "Chào mừng bạn đến với Save Manager!\n\nHãy nhấn nút bên dưới để mở giao diện quản lý các khoản tiết kiệm cá nhân của bạn.",
+        reply_markup: {
+          inline_keyboard: [[
+            {
+              text: "Mở Save Manager",
+              web_app: {
+                url: miniAppUrl
+              }
+            }
+          ]]
+        }
+      };
+      
+      sendTelegramApi("sendMessage", replyPayload);
+    }
+  }
+  return buildJsonResponse("success", "Telegram webhook handled.");
 }
 
 /**
