@@ -3,6 +3,8 @@ import { UserSelector } from './UserSelector';
 import { DepositList } from './DepositList';
 import { DepositForm } from './DepositForm';
 import { RolloverForm } from './RolloverForm';
+import { GrowthChart } from './GrowthChart';
+import { retrieveLaunchParams } from '@telegram-apps/sdk';
 import { callBackendApi } from '../api';
 import { Deposit } from '../types';
 
@@ -14,6 +16,7 @@ export const App: React.FC = () => {
   const [isFormOpen, setIsFormOpen] = useState<boolean>(false);
   const [isRolloverOpen, setIsRolloverOpen] = useState<boolean>(false);
   const [rolloverDeposit, setRolloverDeposit] = useState<Deposit | null>(null);
+  const [showChart, setShowChart] = useState<boolean>(false);
 
   const fetchDeposits = async (username: string) => {
     try {
@@ -39,6 +42,25 @@ export const App: React.FC = () => {
       setDeposits([]);
     }
   }, [selectedUser]);
+
+  useEffect(() => {
+    // 1. Kiểm tra URL query string thông thường
+    const searchParams = new URLSearchParams(window.location.search);
+    const viewParam = searchParams.get('view');
+    
+    // 2. Kiểm tra Telegram Web App Launch Param
+    let startParam: string | undefined;
+    try {
+      const lp = retrieveLaunchParams() as any;
+      startParam = lp.initData?.startParam;
+    } catch (err) {
+      console.warn("Không thể lấy Telegram start param:", err);
+    }
+
+    if (viewParam === 'chart' || startParam === 'chart') {
+      setShowChart(true);
+    }
+  }, []);
 
   const handleSelectUser = (user: string) => {
     setSelectedUser(user);
@@ -82,6 +104,9 @@ export const App: React.FC = () => {
               Thoát
             </button>
           </div>
+
+          {/* Biểu đồ tăng trưởng */}
+          {showChart && <GrowthChart deposits={deposits} />}
 
           {/* Active Deposit List Panel */}
           <div className="bg-[#0e1621] border border-[#2b394a] rounded-2xl p-5 shadow-2xl space-y-4">

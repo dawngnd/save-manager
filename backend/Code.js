@@ -409,19 +409,29 @@ function handleTelegramWebhook(payload) {
     const chatId = payload.message.chat.id;
     const text = payload.message.text.trim();
     
-    if (text === "/start") {
+    if (text === "/start" || text === "/chart") {
       const properties = PropertiesService.getScriptProperties();
-      const miniAppUrl = properties.getProperty("MINI_APP_URL");
+      const miniAppUrl = properties.getProperty("MINI_APP_URL") || "";
+      
+      let targetUrl = miniAppUrl;
+      let replyText = "Chào mừng bạn đến với Save Manager!\n\nHãy nhấn nút bên dưới để mở giao diện quản lý các khoản tiết kiệm cá nhân của bạn.";
+      
+      if (text === "/chart") {
+        targetUrl = miniAppUrl.indexOf("?") !== -1 
+          ? miniAppUrl + "&view=chart" 
+          : miniAppUrl + "?view=chart";
+        replyText = "Nhấn nút dưới đây để xem biểu đồ dự phóng tăng trưởng tài sản của bạn:";
+      }
       
       const replyPayload = {
         chat_id: chatId,
-        text: "Chào mừng bạn đến với Save Manager!\n\nHãy nhấn nút bên dưới để mở giao diện quản lý các khoản tiết kiệm cá nhân của bạn.",
+        text: replyText,
         reply_markup: {
           inline_keyboard: [[
             {
-              text: "Mở Save Manager",
+              text: text === "/chart" ? "📈 Xem biểu đồ" : "Mở Save Manager",
               web_app: {
-                url: miniAppUrl
+                url: targetUrl
               }
             }
           ]]
