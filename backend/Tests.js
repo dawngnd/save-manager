@@ -34,6 +34,8 @@ function runTests() {
     testExecuteRolloverDeposit();
     testDoPostRouting();
     testLockServiceBehavior();
+    testLinkTelegramChatId();
+    testDoPostTelegramWebhook();
     Logger.log("=== TẤT CẢ KIỂM THỬ ĐÃ THÀNH CÔNG ===");
   } catch (error) {
     Logger.log("❌ KIỂM THỬ THẤT BẠI: " + error.toString());
@@ -98,24 +100,34 @@ function createMockSheets() {
   
   const usersSheetMock = {
     getLastRow: function() {
-      return usersData.length === 0 ? 0 : usersData.length + 1; // 1-indexed for header
+      return usersData.length === 0 ? 0 : usersData.length + 1;
     },
     getRange: function(row, col, numRows, numCols) {
+      const rowIndex = row - 2;
       return {
         getValues: function() {
-          // Trả về dữ liệu từ usersData, bỏ qua hàng đầu tiên (giả sử row=2, col=1)
           const result = [];
-          for (let i = row - 2; i < row - 2 + numRows; i++) {
+          for (let i = rowIndex; i < rowIndex + numRows; i++) {
             if (usersData[i]) {
-              result.push([usersData[i]]);
+              const rowValues = usersData[i];
+              const cols = [];
+              for (let c = col - 1; c < col - 1 + numCols; c++) {
+                cols.push(rowValues[c] !== undefined ? rowValues[c] : "");
+              }
+              result.push(cols);
             }
           }
           return result;
+        },
+        setValue: function(value) {
+          if (usersData[rowIndex]) {
+            usersData[rowIndex][col - 1] = value;
+          }
         }
       };
     },
     appendRow: function(rowArray) {
-      usersData.push(rowArray[0]);
+      usersData.push([...rowArray]);
     }
   };
 
@@ -190,7 +202,7 @@ function testExecuteAddDeposit() {
   assert(response.data.amount === 10000000, "Số tiền khớp");
   assert(response.data.expected_interest === 600000, "Lãi suất tính toán khớp");
   assert(sheets._rawDeposits.length === 1, "Đã lưu vào sheet");
-  assert(sheets._rawUsers.includes("user1_vcb"), "Đã tạo user");
+  assert(sheets._rawUsers.some(u => u[0] === "user1_vcb"), "Đã tạo user");
 }
 
 function testExecuteRolloverDeposit() {
@@ -390,6 +402,140 @@ function testLockServiceBehavior() {
       global.LockService = originalLockService;
     } else {
       delete global.LockService;
+    }
+  }
+}
+
+function testLinkTelegramChatId() {
+  Logger.log("Chạy: testLinkTelegramChatId");
+  const sheets = createMockSheets();
+  
+  // Test case 1: User chưa tồn tại, liên kết mới
+  linkTelegramChatId(sheets.users, "user1_vcb", "123456789");
+  assert(sheets._rawUsers.length === 1, "Thêm 1 user");
+  assert(sheets._rawUsers[0][0] === "user1_vcb", "Username chính xác");
+  assert(sheets._rawUsers[0][1] === "123456789", "Chat ID chính xác");
+  
+  // Test case 2: User đã tồn tại, cập nhật Chat ID mới
+  linkTelegramChatId(sheets.users, "user1_vcb", "987654321");
+  assert(sheets._rawUsers.length === 1, "Vẫn là 1 user");
+  assert(sheets._rawUsers[0][1] === "987654321", "Chat ID đã được cập nhật");
+  
+  // Test case 3: Chat ID không đổi, không cập nhật gì thêm
+  linkTelegramChatId(sheets.users, "user1_vcb", "987654321");
+  assert(sheets._rawUsers.length === 1, "Vẫn là 1 user");
+}
+
+function testDoPostTelegramWebhook() {
+  Logger.log("Chạy: testDoPostTelegramWebhook");
+  
+  // Thiết lập mock
+  const originalInitSheets = initializeSheets;
+  const mockSheets = createMockSheets();
+  initializeSheets = () => mockSheets;
+  
+  const originalPropertiesService = global.PropertiesService;
+  global.PropertiesService = {
+    getScriptProperties: () => ({
+      getProperty: (k) => {
+        if (k === 'WEBHOOK_TOKEN') return 'secret_123';
+        if (k === 'MINI_APP_URL') return 'https://t.me/myapp';
+        if (k === 'TELEGRAM_BOT_TOKEN') return 'bot_token_abc';
+        return null;
+      }
+    })
+  };
+  
+  let fetchCalled = false;
+  let fetchUrl = "";
+  let fetchOptions = null;
+  const originalUrlFetchApp = global.UrlFetchApp;
+  global.UrlFetchApp = {
+    fetch: (url, options) => {
+      fetchCalled = true;
+      fetchUrl = url;
+      fetchOptions = options;
+      return {
+        getContentText: () => JSON.stringify({ ok: true })
+      };
+    }
+  };
+  
+  try {
+    // Test case 1: Token hợp lệ, webhook /start từ Telegram
+    const validWebhookEvent = {
+      parameter: { token: "secret_123" },
+      postData: {
+        contents: JSON.stringify({
+          message: {
+            chat: { id: 112233 },
+            text: "/start"
+          }
+        })
+      }
+    };
+    
+    const rawRes = doPost(validWebhookEvent);
+    const res = getResponseData(rawRes);
+    
+    assert(res.status === "success", "DoPost webhook Telegram trả về success");
+    assert(fetchCalled, "Phải gọi UrlFetchApp.fetch để gửi tin nhắn Telegram");
+    assert(fetchUrl.indexOf("sendMessage") !== -1, "Gọi API sendMessage");
+    
+    const payload = JSON.parse(fetchOptions.payload);
+    assert(payload.chat_id === 112233, "Chat ID trong sendMessage khớp");
+    assert(payload.reply_markup.inline_keyboard[0][0].web_app.url === "https://t.me/myapp", "Đúng URL Mini App");
+    
+    // Reset state
+    fetchCalled = false;
+    
+    // Test case 2: Webhook sai token
+    const invalidWebhookEvent = {
+      parameter: { token: "wrong_token" },
+      postData: {
+        contents: JSON.stringify({
+          message: {
+            chat: { id: 112233 },
+            text: "/start"
+          }
+        })
+      }
+    };
+    
+    const rawResInvalid = doPost(invalidWebhookEvent);
+    const resInvalid = getResponseData(rawResInvalid);
+    assert(resInvalid.status === "error", "Sai token phải trả về error");
+    assert(resInvalid.message.indexOf("Unauthorized") !== -1, "Thông báo Unauthorized");
+    assert(!fetchCalled, "Không được gọi UrlFetchApp.fetch khi sai token");
+    
+    // Test case 3: API get_deposits có đính kèm telegram_chat_id -> Tự động link
+    const getDepositsEvent = {
+      parameter: {},
+      postData: {
+        contents: JSON.stringify({
+          action: "get_deposits",
+          username_bankcode: "user2_tcb",
+          telegram_chat_id: "556677"
+        })
+      }
+    };
+    
+    const rawResGet = doPost(getDepositsEvent);
+    const resGet = getResponseData(rawResGet);
+    assert(resGet.status === "success", "get_deposits thành công");
+    
+    // Kiểm tra user2_tcb đã được link telegram_chat_id
+    assert(mockSheets._rawUsers.length === 1, "Thêm 1 user mới qua link");
+    assert(mockSheets._rawUsers[0][0] === "user2_tcb", "Username liên kết đúng");
+    assert(mockSheets._rawUsers[0][1] === "556677", "Chat ID liên kết đúng");
+    
+  } finally {
+    initializeSheets = originalInitSheets;
+    global.PropertiesService = originalPropertiesService;
+    if (originalUrlFetchApp) {
+      global.UrlFetchApp = originalUrlFetchApp;
+    } else {
+      delete global.UrlFetchApp;
     }
   }
 }
