@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 2
-current_phase_name: Backend DB Operations & Calculations
-status: completed
+current_phase: 02
+current_phase_name: backend-db-operations-calculations
+status: executing
 stopped_at: Phase 2 context gathered
-last_updated: "2026-07-10T02:28:23.957Z"
+last_updated: "2026-07-10T02:42:40.797Z"
 last_activity: 2026-07-10
-last_activity_desc: Phase 01 complete, transitioned to Phase 2
+last_activity_desc: Phase 02 execution started
 progress:
   total_phases: 5
   completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
+  total_plans: 4
+  completed_plans: 3
   percent: 20
 ---
 
@@ -24,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-10)
 
 **Core value:** Quản lý chính xác trạng thái các khoản tiết kiệm, hỗ trợ tái tục linh hoạt và hiển thị biểu đồ trực quan ước tính tăng trưởng tổng tài sản theo thời gian.
-**Current focus:** Phase 01 — db-clasp-project-setup
+**Current focus:** Phase 02 — backend-db-operations-calculations
 
 ## Current Position
 
-Phase: 2 — Backend DB Operations & Calculations
-Plan: Not started
-Status: Phase 01 Completed
-Last activity: 2026-07-10 — Phase 01 complete, transitioned to Phase 2
+Phase: 02 (backend-db-operations-calculations) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
+Last activity: 2026-07-10 — Phase 02 execution started
 
 Progress: [██████████] 100%
 
@@ -60,6 +60,7 @@ Progress: [██████████] 100%
 - Trend: Stable
 
 *Updated after each plan completion*
+| Phase 02-backend-db-operations-calculations P01 | 10 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -70,6 +71,8 @@ Recent decisions affecting current work:
 
 - [Init]: Google Sheets database, Telegram Web App UI, and manual username/bankcode login selected.
 - [Phase 01-02]: Configured .clasp.json with rootDir: "." to match backend development directory.
+- [Phase ?]: Lưu ngày tháng dưới dạng Plain Text và tự parse ngày dạng DD/MM/YYYY để tránh lệch múi giờ trên GAS.
+- [Phase ?]: Sử dụng LockService khi thực hiện ghi/tái tục để chống race condition.
 
 ### Pending Todos
 
@@ -89,6 +92,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-10T02:28:23.952Z
+Last session: 2026-07-10T02:42:24.522Z
 Stopped at: Phase 2 context gathered
 Resume file: .planning/phases/02-backend-db-operations-calculations/02-CONTEXT.md

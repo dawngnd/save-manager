@@ -16,11 +16,11 @@ Requirements for initial release.
 
 ### Backend API (Google Apps Script)
 
-- [ ] **API-01**: Cung cấp API endpoint (`doPost`) nhận định dạng JSON để xử lý các yêu cầu từ Frontend:
+- [x] **API-01**: Cung cấp API endpoint (`doPost`) nhận định dạng JSON để xử lý các yêu cầu từ Frontend:
   - Lấy danh sách các khoản tiết kiệm của user.
   - Thêm mới một khoản tiết kiệm.
   - Thực hiện tái tục (rollover) một khoản tiết kiệm.
-- [ ] **API-02**: Tự động tính toán tiền lãi dự tính (`expected_interest = amount * interest_rate * (maturity_at - created_at) / 365`) khi thêm mới hoặc tái tục.
+- [x] **API-02**: Tự động tính toán tiền lãi dự tính (`expected_interest = amount * interest_rate * (maturity_at - created_at) / 365`) khi thêm mới hoặc tái tục.
 - [x] **API-03**: Thiết lập timezone mặc định `Asia/Ho_Chi_Minh` cho toàn bộ GAS project và Google Sheet để tránh lệch ngày giờ.
 
 ### Telegram Integration & Notifications
@@ -57,8 +57,8 @@ Deferred to future release.
 |-------------|-------|--------|
 | DB-01 | Phase 1 | Complete |
 | DB-02 | Phase 2 | Pending |
-| API-01 | Phase 2 | Pending |
-| API-02 | Phase 2 | Pending |
+| API-01 | Phase 2 | Complete |
+| API-02 | Phase 2 | Complete |
 | API-03 | Phase 1 | Complete |
 | BOT-01 | Phase 3 | Pending |
 | NOTF-01 | Phase 3 | Pending |

@@ -102,7 +102,7 @@
 
 ## Conventions
 
-Conventions not yet established. Will populate as patterns emerge during development.
+- **Ngôn ngữ**: Trao đổi và giải thích bằng tiếng Việt.
 <!-- GSD:conventions-end -->
 
 <!-- GSD:architecture-start source:ARCHITECTURE.md -->

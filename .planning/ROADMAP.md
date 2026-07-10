@@ -48,11 +48,11 @@ Plans:
   2. Adding a deposit via `doPost` creates a row in the `Deposits` sheet with auto-calculated expected interest based on the formulas.
   3. Concurrency test with simulated simultaneous writes executes sequentially without row overwrite errors using `LockService`.
 
-**Plans**: 2 plans
+**Plans**: 1/2 plans executed
 
 Plans:
 
-- [ ] 02-01-PLAN.md — Implement database operations (read/write deposits) and calculations in Apps Script
+- [x] 02-01-PLAN.md — Implement database operations (read/write deposits) and calculations in Apps Script
 - [ ] 02-02-PLAN.md — Build doPost endpoint controller with LockService concurrency guards
 
 ### Phase 3: Telegram Bot Webhook Integration
@@ -116,7 +116,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. DB & clasp Project Setup | 2/2 | Complete    | 2026-07-10 |
-| 2. Backend DB Operations & Calculations | 0/2 | Not started | - |
+| 2. Backend DB Operations & Calculations | 1/2 | In Progress|  |
 | 3. Telegram Bot Webhook Integration | 0/2 | Not started | - |
 | 4. Frontend UI (TWA) & Auth | 0/3 | Not started | - |
 | 5. Charts & Rollover Mechanics | 0/2 | Not started | - |
