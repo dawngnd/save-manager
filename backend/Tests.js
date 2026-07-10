@@ -36,6 +36,7 @@ function runTests() {
     testLockServiceBehavior();
     testLinkTelegramChatId();
     testDoPostTelegramWebhook();
+    testCheckMaturityAndSendAlerts();
     Logger.log("=== TẤT CẢ KIỂM THỬ ĐÃ THÀNH CÔNG ===");
   } catch (error) {
     Logger.log("❌ KIỂM THỬ THẤT BẠI: " + error.toString());
@@ -539,3 +540,90 @@ function testDoPostTelegramWebhook() {
     }
   }
 }
+
+function testCheckMaturityAndSendAlerts() {
+  Logger.log("Chạy: testCheckMaturityAndSendAlerts");
+  
+  const originalInitSheets = initializeSheets;
+  const mockSheets = createMockSheets();
+  initializeSheets = () => mockSheets;
+  
+  const originalPropertiesService = global.PropertiesService;
+  global.PropertiesService = {
+    getScriptProperties: () => ({
+      getProperty: (k) => {
+        if (k === 'TELEGRAM_BOT_TOKEN') return 'bot_token_abc';
+        return null;
+      }
+    })
+  };
+  
+  const sentPayloads = [];
+  const originalUrlFetchApp = global.UrlFetchApp;
+  global.UrlFetchApp = {
+    fetch: (url, options) => {
+      sentPayloads.push({
+        url: url,
+        options: options,
+        payload: JSON.parse(options.payload)
+      });
+      return {
+        getContentText: () => JSON.stringify({ ok: true })
+      };
+    }
+  };
+  
+  try {
+    mockSheets.users.appendRow(["userA_vcb", "chat_111"]);
+    mockSheets.users.appendRow(["userB_tcb", "chat_222"]);
+    mockSheets.users.appendRow(["userC_bidv", ""]);
+    
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+    
+    const formatDate = (date) => {
+      const d = String(date.getDate()).padStart(2, '0');
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const y = date.getFullYear();
+      return `${d}/${m}/${y}`;
+    };
+    
+    const dateToday = formatDate(today);
+    const dateIn2Days = formatDate(new Date(today.getTime() + 2 * 24 * 60 * 60 * 1000));
+    const dateOverdue1Day = formatDate(new Date(today.getTime() - 1 * 24 * 60 * 60 * 1000));
+    const dateIn30Days = formatDate(new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000));
+    const dateIn1Day = formatDate(new Date(today.getTime() + 1 * 24 * 60 * 60 * 1000));
+    
+    mockSheets.deposits.appendRow(["dep-1", 10000000, 6.0, "active", 600000, dateToday, dateIn2Days, "userA_vcb"]);
+    mockSheets.deposits.appendRow(["dep-2", 5000000, 5.0, "active", 250000, dateToday, dateOverdue1Day, "userA_vcb"]);
+    mockSheets.deposits.appendRow(["dep-3", 15000000, 5.5, "active", 825000, dateToday, dateIn30Days, "userA_vcb"]);
+    mockSheets.deposits.appendRow(["dep-4", 8000000, 6.2, "active", 496000, dateToday, dateToday, "userB_tcb"]);
+    mockSheets.deposits.appendRow(["dep-5", 12000000, 6.0, "active", 720000, dateToday, dateIn1Day, "userC_bidv"]);
+    mockSheets.deposits.appendRow(["dep-6", 10000000, 6.0, "rolled_over", 600000, dateToday, dateIn1Day, "userA_vcb"]);
+    
+    checkMaturityAndSendAlerts();
+    
+    assert(sentPayloads.length === 2, "Chỉ được gửi 2 thông báo Telegram");
+    
+    const userAMsg = sentPayloads.find(p => p.payload.chat_id === "chat_111" || p.payload.chat_id === 111);
+    assert(userAMsg !== undefined, "Phải gửi tin nhắn cho User A (chat_111)");
+    assert(userAMsg.url.indexOf("sendMessage") !== -1, "Gọi API sendMessage");
+    assert(userAMsg.payload.text.indexOf("dep-1") !== -1, "Tin nhắn phải chứa thông tin dep-1");
+    assert(userAMsg.payload.text.indexOf("dep-2") !== -1, "Tin nhắn phải chứa thông tin dep-2");
+    assert(userAMsg.payload.text.indexOf("dep-3") === -1, "Tin nhắn không được chứa thông tin dep-3");
+    
+    const userBMsg = sentPayloads.find(p => p.payload.chat_id === "chat_222" || p.payload.chat_id === 222);
+    assert(userBMsg !== undefined, "Phải gửi tin nhắn cho User B (chat_222)");
+    assert(userBMsg.payload.text.indexOf("dep-4") !== -1, "Tin nhắn phải chứa thông tin dep-4");
+    
+  } finally {
+    initializeSheets = originalInitSheets;
+    global.PropertiesService = originalPropertiesService;
+    if (originalUrlFetchApp) {
+      global.UrlFetchApp = originalUrlFetchApp;
+    } else {
+      delete global.UrlFetchApp;
+    }
+  }
+}
+
