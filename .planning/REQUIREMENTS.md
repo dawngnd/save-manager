@@ -33,7 +33,7 @@ Requirements for initial release.
 - [ ] **UI-01**: Xây dựng SPA bằng Vite + TypeScript + Tailwind CSS, deploy lên GitHub Pages công khai (hoàn toàn miễn phí).
 - [ ] **UI-02**: Giao diện hiển thị trực tiếp danh sách các khoản tiết kiệm và nút bấm tương tác (không yêu cầu trang đăng nhập phức tạp, tự động lưu thông tin cấu hình hoặc dùng tài khoản mặc định).
 - [ ] **UI-03**: Tích hợp `@telegram-apps/sdk` để tối ưu hóa hiển thị (theme, viewport) khi chạy trong Telegram Mini App.
-- [ ] **STAT-01**: Hiển thị thống kê tổng tài sản (gốc + lãi dự kiến tại thời điểm đáo hạn) dạng biểu đồ timeseries sử dụng `Chart.js`.
+- [x] **STAT-01**: Hiển thị thống kê tổng tài sản (gốc + lãi dự kiến tại thời điểm đáo hạn) dạng biểu đồ timeseries sử dụng `Chart.js`.
 - [ ] **DEP-01**: Form thêm mới khoản tiết kiệm trực quan.
 - [x] **DEP-02**: Tính năng Tái tục (Rollover) ngay trên giao diện: Cho phép người dùng nhập thủ công số tiền gốc mới cho chu kỳ tiếp theo, hệ thống tự động lưu trữ thông tin khoản cũ và tạo mới khoản mới.
 
@@ -65,7 +65,7 @@ Deferred to future release.
 | UI-01 | Phase 4 | Pending |
 | UI-02 | Phase 4 | Pending |
 | UI-03 | Phase 4 | Pending |
-| STAT-01 | Phase 5 | Pending |
+| STAT-01 | Phase 5 | Complete |
 | DEP-01 | Phase 4 | Pending |
 | DEP-02 | Phase 5 | Complete |
 

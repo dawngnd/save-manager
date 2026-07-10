@@ -15,7 +15,7 @@ Save Manager is a lightweight personal savings tracking system built on top of G
 - [x] **Phase 2: Backend DB Operations & Calculations** - Build backend CRUD functions, LockService guards, and expected interest calculations. (completed 2026-07-10)
 - [ ] **Phase 3: Telegram Bot Webhook Integration** - Connect Telegram Bot API webhooks and set up daily maturity alerts cron job.
 - [ ] **Phase 4: Frontend UI (TWA) & Auth** - Create the single-file Vite/TS/Tailwind SPA with Telegram Apps SDK integration and deposit forms.
-- [ ] **Phase 5: Charts & Rollover Mechanics** - Build growth projection timeseries chart and execute rollover transaction workflow.
+- [x] **Phase 5: Charts & Rollover Mechanics** - Build growth projection timeseries chart and execute rollover transaction workflow.
 
 ## Phase Details
 
@@ -113,10 +113,10 @@ Plans:
 Plans:
 
 - [x] 05-01-PLAN.md
-- [ ] 05-02-PLAN.md
+- [x] 05-02-PLAN.md
 
 - [x] 05-01: Implement rollover transaction logic in both backend and frontend UI
-- [ ] 05-02: Integrate Chart.js and build asset growth timeseries projection dashboard
+- [x] 05-02: Integrate Chart.js and build asset growth timeseries projection dashboard
 
 ## Progress
 
@@ -129,4 +129,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 2. Backend DB Operations & Calculations | 2/2 | Complete    | 2026-07-10 |
 | 3. Telegram Bot Webhook Integration | 2/2 | Complete    | 2026-07-10 |
 | 4. Frontend UI (TWA) & Auth | 3/3 | Complete    | 2026-07-10 |
-| 5. Charts & Rollover Mechanics | 1/2 | In Progress|  |
+| 5. Charts & Rollover Mechanics | 2/2 | Complete | 2026-07-10 |
