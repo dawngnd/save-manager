@@ -48,6 +48,8 @@ Quản lý chính xác trạng thái các khoản tiết kiệm, hỗ trợ tái
 | Sử dụng Google Sheets làm database | Dễ xem, chỉnh sửa trực tiếp, hoàn toàn miễn phí và tích hợp sâu với Google Apps Script. | — Validated in Phase 1 |
 | Tương tác qua Telegram Web App thay vì Text Bot | Cung cấp giao diện đồ họa (chart, form nhập liệu) phong phú hơn nhiều so với tin nhắn text. | — Pending |
 | Nhập thủ công username/bankcode để đăng nhập | Tránh việc phụ thuộc chặt chẽ vào Chat ID Telegram, cho phép truy cập linh hoạt từ nhiều thiết bị/tài khoản Telegram nếu cần. | — Pending |
+| Sử dụng LockService.getScriptLock() để đồng bộ hóa ghi | Ngăn ngừa tranh chấp dữ liệu (race condition) trên Google Sheets khi có nhiều ghi đồng thời. | — Validated in Phase 2 |
+| Lưu trữ và xử lý ngày tháng theo chuỗi thô dạng DD/MM/YYYY | Tránh hiện tượng dịch lệch ngày do chênh lệch múi giờ giữa GAS server và client. | — Validated in Phase 2 |
 
 ## Evolution
 
@@ -67,4 +69,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-10 after Phase 1 completion*
+*Last updated: 2026-07-10 after Phase 2 completion*
