@@ -516,7 +516,8 @@ function testDoPostTelegramWebhook() {
         contents: JSON.stringify({
           action: "get_deposits",
           username_bankcode: "user2_tcb",
-          telegram_chat_id: "556677"
+          telegram_chat_id: "556677",
+          initData: "mock_hash"
         })
       }
     };

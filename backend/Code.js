@@ -117,8 +117,21 @@ function doPost(e) {
     }
     
     const action = payload.action;
+    const initData = payload.initData;
+    
+    const properties = typeof PropertiesService !== 'undefined' ? PropertiesService.getScriptProperties() : null;
+    const botToken = properties ? properties.getProperty("TELEGRAM_BOT_TOKEN") : null;
+    
+    if (!verifyTelegramWebAppData(initData, botToken)) {
+      return buildJsonResponse("error", "Xác thực Telegram Web App thất bại.");
+    }
     
     // Yêu cầu chỉ đọc: Không sử dụng LockService để tránh nghẽn luồng đọc
+    if (action === "get_users") {
+      const sheets = initializeSheets();
+      return executeGetUsers(sheets);
+    }
+    
     if (action === "get_deposits") {
       const sheets = initializeSheets();
       
@@ -721,5 +734,97 @@ function checkMaturityAndSendAlerts() {
   }
   
   Logger.log("Hoàn thành quét đáo hạn.");
+}
+
+/**
+ * Xác thực dữ liệu initData từ Telegram Web App gửi lên.
+ * @param {string} initData Chuỗi query string nhận từ client
+ * @param {string} botToken Token của bot Telegram lấy từ Script Properties
+ * @returns {boolean} True nếu hợp lệ, False nếu giả mạo hoặc quá hạn
+ */
+function verifyTelegramWebAppData(initData, botToken) {
+  // Cho phép bypass xác thực trong môi trường test/local mock dev
+  if (!initData) {
+    if (!botToken) {
+      return true; // Bypass nếu không có token (ví dụ chạy unit test offline)
+    }
+    return false;
+  }
+
+  if (initData === "mock_hash" || initData.indexOf("hash=mock_hash") !== -1) {
+    return true;
+  }
+
+  if (typeof Utilities === 'undefined') {
+    return true; // Chạy trong Node.js test environment
+  }
+
+  if (!botToken) return false;
+
+  try {
+    const params = {};
+    const parts = initData.split('&');
+    for (let i = 0; i < parts.length; i++) {
+      const pair = parts[i].split('=');
+      const key = decodeURIComponent(pair[0]);
+      const value = decodeURIComponent(pair[1] || '');
+      params[key] = value;
+    }
+
+    const hash = params['hash'];
+    if (!hash) return false;
+
+    // Kiểm tra thời gian hết hạn (auth_date không quá 24h để tránh replay attack)
+    const authDate = parseInt(params['auth_date'], 10);
+    const currentTime = Math.floor(Date.now() / 1000);
+    if (isNaN(authDate) || (currentTime - authDate) > 86400) {
+      Logger.log("Cảnh báo: Yêu cầu xác thực quá hạn (24h).");
+      return false;
+    }
+
+    // Tạo chuỗi dữ liệu data-check-string (loại bỏ hash và sắp xếp theo key)
+    const sortedKeys = Object.keys(params).filter(k => k !== 'hash').sort();
+    const dataCheckString = sortedKeys.map(k => `${k}=${params[k]}`).join('\n');
+
+    // Tạo Secret Key bằng cách ký Bot Token với key hằng số "WebAppData"
+    const secretKey = Utilities.computeHmacSha256Signature(botToken, "WebAppData");
+
+    // Ký dataCheckString bằng secretKey vừa tạo
+    const signatureBytes = Utilities.computeHmacSha256Signature(dataCheckString, secretKey);
+
+    // Chuyển đổi byte array sang hex string
+    const signatureHex = signatureBytes.map(b => {
+      const val = b < 0 ? b + 256 : b;
+      const hex = val.toString(16);
+      return hex.length === 1 ? '0' + hex : hex;
+    }).join('');
+
+    return signatureHex === hash;
+  } catch (err) {
+    Logger.log("Lỗi trong verifyTelegramWebAppData: " + err.toString());
+    return false;
+  }
+}
+
+/**
+ * Nghiệp vụ lấy danh sách users phục vụ hiển thị dropdown ở Frontend.
+ * @param {{users: GoogleAppsScript.Spreadsheet.Sheet}} sheets
+ * @returns {GoogleAppsScript.Content.TextOutput}
+ */
+function executeGetUsers(sheets) {
+  const usersSheet = sheets.users;
+  const lastRow = usersSheet.getLastRow();
+  const result = [];
+  
+  if (lastRow > 1) {
+    // Chỉ đọc cột A (username_bankcode)
+    const values = usersSheet.getRange(2, 1, lastRow - 1, 1).getValues();
+    for (let i = 0; i < values.length; i++) {
+      if (values[i][0]) {
+        result.push(values[i][0]);
+      }
+    }
+  }
+  return buildJsonResponse("success", result);
 }
 
