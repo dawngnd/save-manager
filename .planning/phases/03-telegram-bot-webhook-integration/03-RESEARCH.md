@@ -473,9 +473,9 @@ function checkMaturityAndSendAlerts() {
 | A1 | GAS không cung cấp thông tin headers HTTP trong đối tượng sự kiện `e` của `doPost(e)`. | Pattern 1 | Nếu thực tế Google có hỗ trợ nhưng chúng ta bỏ qua, chúng ta sẽ lãng phí cơ hội sử dụng tiêu chuẩn `X-Telegram-Bot-Api-Secret-Token`. Tuy nhiên, kiểm chứng cho thấy GAS thực sự không hỗ trợ nên rủi ro này bằng 0. |
 | A2 | Trực tiếp dùng ID nhận từ Web App `initDataUnsafe.user.id` làm `chat_id` gửi tin nhắn. | Quét ngày đáo hạn | Nếu người dùng chưa từng nhấn `/start` trên bot, Telegram sẽ chặn không cho bot gửi tin nhắn trước. Người dùng bắt buộc phải tương tác `/start` ít nhất một lần để bot lấy quyền gửi tin. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Xử lý khi cuộc gọi gửi tin nhắn tới Telegram bị lỗi (ví dụ: User đã chặn Bot):**
+1. **Xử lý khi cuộc gọi gửi tin nhắn tới Telegram bị lỗi (ví dụ: User đã chặn Bot)** — RESOLVED: Ghi log lỗi vào hệ thống Logger. Trong tương lai (Phase 5), có thể bổ sung cột trạng thái hoạt động của chat_id trong bảng `Users` để tối ưu số lượng gọi API bị lỗi.
    - *What we know:* Nếu user block bot, API Telegram trả về lỗi HTTP 403 Forbidden.
    - *What's unclear:* Chúng ta có nên tự động xóa `telegram_chat_id` trong bảng Users hoặc đánh dấu cờ lỗi để tránh gọi lại vô ích vào ngày hôm sau hay không?
    - *Recommendation:* Ghi log lỗi vào hệ thống Logger. Trong tương lai (Phase 5), có thể bổ sung cột trạng thái hoạt động của chat_id trong bảng `Users` để tối ưu số lượng gọi API bị lỗi.
