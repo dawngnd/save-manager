@@ -69,7 +69,7 @@ Plans:
 
 Plans:
 
-- [ ] 03-01: Establish Telegram Bot webhook connection and `/start` command response
+- [x] 03-01: Establish Telegram Bot webhook connection and `/start` command response
 - [ ] 03-02: Implement daily cron job trigger in GAS for deposit maturity checks and alerts
 
 ### Phase 4: Frontend UI (TWA) & Auth

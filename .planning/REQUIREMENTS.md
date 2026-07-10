@@ -25,7 +25,7 @@ Requirements for initial release.
 
 ### Telegram Integration & Notifications
 
-- [ ] **BOT-01**: Thiết lập Telegram Bot webhook trỏ về GAS Web App để nhận tin nhắn và cung cấp nút bấm mở Telegram Mini App.
+- [x] **BOT-01**: Thiết lập Telegram Bot webhook trỏ về GAS Web App để nhận tin nhắn và cung cấp nút bấm mở Telegram Mini App.
 - [ ] **NOTF-01**: Thiết lập trigger quét hàng ngày (daily cron job) trong GAS để tìm các khoản sắp đáo hạn (trong vòng 3 ngày tới) hoặc đã đáo hạn và gửi tin nhắn cảnh báo trực tiếp qua Telegram Bot.
 
 ### Frontend User Interface (GitHub Pages)
@@ -60,7 +60,7 @@ Deferred to future release.
 | API-01 | Phase 2 | Complete |
 | API-02 | Phase 2 | Complete |
 | API-03 | Phase 1 | Complete |
-| BOT-01 | Phase 3 | Pending |
+| BOT-01 | Phase 3 | Complete |
 | NOTF-01 | Phase 3 | Pending |
 | UI-01 | Phase 4 | Pending |
 | UI-02 | Phase 4 | Pending |

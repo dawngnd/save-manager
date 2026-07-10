@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 3
 current_phase_name: Telegram Bot Webhook Integration
 status: executing
-stopped_at: Phase 3 plans generated and verified
-last_updated: "2026-07-10T03:44:33.767Z"
+stopped_at: Completed 03-telegram-bot-webhook-integration-01-PLAN.md
+last_updated: "2026-07-10T03:46:41.069Z"
 last_activity: 2026-07-10
 last_activity_desc: Phase 3 execution started
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 6
-  completed_plans: 4
+  completed_plans: 5
   percent: 40
 ---
 
@@ -29,8 +29,8 @@ See: .planning/PROJECT.md (updated 2026-07-10)
 ## Current Position
 
 Phase: 3 (Telegram Bot Webhook Integration) — EXECUTING
-Plan: 1 of 2
-Status: Executing Phase 3
+Plan: 2 of 2
+Status: Ready to execute
 Last activity: 2026-07-10 — Phase 3 execution started
 
 Progress: [██████████] 100%
@@ -63,6 +63,7 @@ Progress: [██████████] 100%
 *Updated after each plan completion*
 | Phase 02-backend-db-operations-calculations P01 | 10 | 2 tasks | 2 files |
 | Phase 02-backend-db-operations-calculations P02 | 2min | 2 tasks | 2 files |
+| Phase 03-telegram-bot-webhook-integration P01 | 15 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -77,6 +78,8 @@ Recent decisions affecting current work:
 - [Phase ?]: Sử dụng LockService khi thực hiện ghi/tái tục để chống race condition.
 - [Phase 02-backend-db-operations-calculations]: Sử dụng LockService.getScriptLock() để đồng bộ hóa ghi và ngăn ngừa race condition trên Google Sheets.
 - [Phase 02-backend-db-operations-calculations]: Triển khai hàm getResponseData trợ giúp trích xuất JSON trong Tests.js để hỗ trợ chạy test trên cả hai môi trường Node.js có/không có Mock ContentService.
+- [Phase 03-telegram-bot-webhook-integration]: Sử dụng query parameter token trên URL Webhook để xác thực nguồn gửi từ Telegram do giới hạn không đọc được HTTP headers trên GAS.
+- [Phase 03-telegram-bot-webhook-integration]: Tự động cập nhật telegram_chat_id của user trong bảng Users khi frontend gọi API get_deposits có đính kèm telegram_chat_id.
 
 ### Pending Todos
 
@@ -96,6 +99,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-10T03:37:39.201Z
-Stopped at: Phase 3 plans generated and verified
-Resume file: .planning/phases/03-telegram-bot-webhook-integration/03-01-PLAN.md
+Last session: 2026-07-10T03:46:41.064Z
+Stopped at: Completed 03-telegram-bot-webhook-integration-01-PLAN.md
+Resume file: None
