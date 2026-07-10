@@ -1,0 +1,11 @@
+node_modules/**
+package.json
+package-lock.json
+tsconfig.json
+vite.config.*
+.clasp.json
+dist/**
+SETUP.md
+*.md
+.git/**
+.gitignore
