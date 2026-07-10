@@ -68,3 +68,21 @@ function isHeaderEmpty(sheet, numCols) {
   const values = sheet.getRange(1, 1, 1, numCols).getValues()[0];
   return values.every(val => val === '' || val === null || val === undefined);
 }
+
+/**
+ * Xử lý yêu cầu HTTP GET gửi tới Web App.
+ * Trả về thông tin trạng thái hệ thống dưới dạng JSON.
+ * @param {GoogleAppsScript.Events.DoGet} e đối tượng event của GET request
+ * @returns {GoogleAppsScript.Content.TextOutput}
+ */
+function doGet(e) {
+  const response = {
+    status: "ok",
+    message: "Save Manager backend is running",
+    timestamp: new Date().toISOString(),
+    timezone: Session.getScriptTimeZone()
+  };
+  
+  return ContentService.createTextOutput(JSON.stringify(response))
+    .setMimeType(ContentService.MimeType.JSON);
+}
