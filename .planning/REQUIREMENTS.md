@@ -9,7 +9,7 @@ Requirements for initial release.
 
 ### Database (Google Sheets)
 
-- [ ] **DB-01**: Thiết lập Google Sheets làm database với 2 bảng:
+- [x] **DB-01**: Thiết lập Google Sheets làm database với 2 bảng:
   - Bảng `Users`: các cột `username_bankcode` (khóa chính)
   - Bảng `Deposits`: các cột `id`, `amount` (số tiền gốc), `interest_rate` (% lãi dự tính), `status` (active / matured / rolled_over), `expected_interest` (tiền lãi dự tính), `created_at` (ngày tạo), `maturity_at` (ngày đáo hạn), `user_bankcode` (liên kết bảng Users)
 - [ ] **DB-02**: Triển khai cơ chế khóa ghi bằng `LockService` trên Google Apps Script để tránh tranh chấp dữ liệu khi có nhiều yêu cầu ghi đồng thời.
@@ -21,7 +21,7 @@ Requirements for initial release.
   - Thêm mới một khoản tiết kiệm.
   - Thực hiện tái tục (rollover) một khoản tiết kiệm.
 - [ ] **API-02**: Tự động tính toán tiền lãi dự tính (`expected_interest = amount * interest_rate * (maturity_at - created_at) / 365`) khi thêm mới hoặc tái tục.
-- [ ] **API-03**: Thiết lập timezone mặc định `Asia/Ho_Chi_Minh` cho toàn bộ GAS project và Google Sheet để tránh lệch ngày giờ.
+- [x] **API-03**: Thiết lập timezone mặc định `Asia/Ho_Chi_Minh` cho toàn bộ GAS project và Google Sheet để tránh lệch ngày giờ.
 
 ### Telegram Integration & Notifications
 
@@ -55,11 +55,11 @@ Deferred to future release.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DB-01 | Phase 1 | Pending |
+| DB-01 | Phase 1 | Complete |
 | DB-02 | Phase 2 | Pending |
 | API-01 | Phase 2 | Pending |
 | API-02 | Phase 2 | Pending |
-| API-03 | Phase 1 | Pending |
+| API-03 | Phase 1 | Complete |
 | BOT-01 | Phase 3 | Pending |
 | NOTF-01 | Phase 3 | Pending |
 | UI-01 | Phase 4 | Pending |
@@ -70,6 +70,7 @@ Deferred to future release.
 | DEP-02 | Phase 5 | Pending |
 
 **Coverage:**
+
 - v1 requirements: 13 total
 - Mapped to phases: 13
 - Unmapped: 0 ✓
