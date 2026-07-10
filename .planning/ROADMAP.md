@@ -108,11 +108,14 @@ Plans:
   1. User can click a "Rollover" button on a matured deposit, input a new principal amount, and verify that the old deposit status changes to `rolled_over` while a new deposit is created.
   2. User can see a timeseries growth chart on their dashboard showing expected assets growth (principal + interest) over time based on the active deposits.
 
-**Plans**: 2 plans
+**Plans**: 1/2 plans executed
 
 Plans:
 
-- [ ] 05-01: Implement rollover transaction logic in both backend and frontend UI
+- [x] 05-01-PLAN.md
+- [ ] 05-02-PLAN.md
+
+- [x] 05-01: Implement rollover transaction logic in both backend and frontend UI
 - [ ] 05-02: Integrate Chart.js and build asset growth timeseries projection dashboard
 
 ## Progress
@@ -126,4 +129,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 2. Backend DB Operations & Calculations | 2/2 | Complete    | 2026-07-10 |
 | 3. Telegram Bot Webhook Integration | 2/2 | Complete    | 2026-07-10 |
 | 4. Frontend UI (TWA) & Auth | 3/3 | Complete    | 2026-07-10 |
-| 5. Charts & Rollover Mechanics | 0/2 | Not started | - |
+| 5. Charts & Rollover Mechanics | 1/2 | In Progress|  |
