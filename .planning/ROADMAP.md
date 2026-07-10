@@ -88,7 +88,7 @@ Plans:
 Plans:
 **Wave 1**
 
-- [ ] 04-01: Scaffold Vite + TS + Tailwind SPA and configure vite-plugin-singlefile bundler
+- [x] 04-01: Scaffold Vite + TS + Tailwind SPA and configure vite-plugin-singlefile bundler
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -124,6 +124,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 |-------|----------------|--------|-----------|
 | 1. DB & clasp Project Setup | 2/2 | Complete    | 2026-07-10 |
 | 2. Backend DB Operations & Calculations | 2/2 | Complete    | 2026-07-10 |
-| 3. Telegram Bot Webhook Integration | 0/2 | Not started | - |
-| 4. Frontend UI (TWA) & Auth | 0/3 | Not started | - |
+| 3. Telegram Bot Webhook Integration | 2/2 | Complete    | 2026-07-10 |
+| 4. Frontend UI (TWA) & Auth | 1/3 | In progress | - |
 | 5. Charts & Rollover Mechanics | 0/2 | Not started | - |
