@@ -92,11 +92,11 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 04-02: Integrate @telegram-apps/sdk and implement basic login/configuration screen
+- [x] 04-02: Integrate @telegram-apps/sdk and implement basic login/configuration screen
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 04-03: Create active deposit list view and add deposit interactive form
+- [x] 04-03: Create active deposit list view and add deposit interactive form
 
 ### Phase 5: Charts & Rollover Mechanics
 
@@ -125,5 +125,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 1. DB & clasp Project Setup | 2/2 | Complete    | 2026-07-10 |
 | 2. Backend DB Operations & Calculations | 2/2 | Complete    | 2026-07-10 |
 | 3. Telegram Bot Webhook Integration | 2/2 | Complete    | 2026-07-10 |
-| 4. Frontend UI (TWA) & Auth | 1/3 | In progress | - |
+| 4. Frontend UI (TWA) & Auth | 3/3 | Complete    | 2026-07-10 |
 | 5. Charts & Rollover Mechanics | 0/2 | Not started | - |
