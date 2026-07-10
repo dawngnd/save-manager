@@ -12,7 +12,7 @@ Requirements for initial release.
 - [x] **DB-01**: Thiết lập Google Sheets làm database với 2 bảng:
   - Bảng `Users`: các cột `username_bankcode` (khóa chính)
   - Bảng `Deposits`: các cột `id`, `amount` (số tiền gốc), `interest_rate` (% lãi dự tính), `status` (active / matured / rolled_over), `expected_interest` (tiền lãi dự tính), `created_at` (ngày tạo), `maturity_at` (ngày đáo hạn), `user_bankcode` (liên kết bảng Users)
-- [ ] **DB-02**: Triển khai cơ chế khóa ghi bằng `LockService` trên Google Apps Script để tránh tranh chấp dữ liệu khi có nhiều yêu cầu ghi đồng thời.
+- [x] **DB-02**: Triển khai cơ chế khóa ghi bằng `LockService` trên Google Apps Script để tránh tranh chấp dữ liệu khi có nhiều yêu cầu ghi đồng thời.
 
 ### Backend API (Google Apps Script)
 
@@ -56,7 +56,7 @@ Deferred to future release.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | DB-01 | Phase 1 | Complete |
-| DB-02 | Phase 2 | Pending |
+| DB-02 | Phase 2 | Complete |
 | API-01 | Phase 2 | Complete |
 | API-02 | Phase 2 | Complete |
 | API-03 | Phase 1 | Complete |
