@@ -821,18 +821,23 @@ function verifyTelegramWebAppData(initData, botToken) {
     const sortedKeys = Object.keys(params).filter(k => k !== 'hash').sort();
     const dataCheckString = sortedKeys.map(k => `${k}=${params[k]}`).join('\n');
 
-    // Tạo Secret Key: HMAC-SHA256(key=botToken, value="WebAppData")
-    // GAS API: computeHmacSha256Signature(value, key)
-    const secretKey = Utilities.computeHmacSha256Signature("WebAppData", botToken);
+    // Telegram spec: secret_key = HMAC-SHA256(key="WebAppData", msg=bot_token)
+    // GAS API computeHmacSha256Signature(value, key) → value=msg, key=key
+    const secretKeyBytes = Utilities.computeHmacSha256Signature(botToken, "WebAppData");
 
-    // Ký dataCheckString bằng secretKey (byte array)
-    const signatureBytes = Utilities.computeHmacSha256Signature(dataCheckString, secretKey);
+    // Convert byte array → char string để dùng làm key cho HMAC lần 2
+    // GAS byte array có giá trị -128..127, cần chuyển sang 0..255
+    const keyString = secretKeyBytes.map(function(b) {
+      return String.fromCharCode(b < 0 ? b + 256 : b);
+    }).join('');
+
+    // Telegram spec: hash = HMAC-SHA256(key=secret_key, msg=data_check_string)
+    const signatureBytes = Utilities.computeHmacSha256Signature(dataCheckString, keyString);
 
     // Chuyển đổi byte array sang hex string
-    const signatureHex = signatureBytes.map(b => {
+    const signatureHex = signatureBytes.map(function(b) {
       const val = b < 0 ? b + 256 : b;
-      const hex = val.toString(16);
-      return hex.length === 1 ? '0' + hex : hex;
+      return ('0' + val.toString(16)).slice(-2);
     }).join('');
 
     if (signatureHex !== hash) {
