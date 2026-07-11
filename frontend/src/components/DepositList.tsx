@@ -67,20 +67,14 @@ export const DepositList: React.FC<DepositListProps> = ({ deposits, onTriggerRol
   };
 
   // Filter and sort deposits
-  const getActionRequiredDeposits = (items: Deposit[]) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayStr = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
+  type StatusFilter = 'active' | 'matured' | 'rolled_over' | 'all';
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('active');
 
+  const getFilteredDeposits = (items: Deposit[]) => {
     return items
-      .filter((item) => item.status === 'active' || item.status === 'matured')
       .filter((item) => {
-        try {
-          const diffDays = calculateDaysBetween(todayStr, item.maturity_at);
-          return diffDays <= 3;
-        } catch {
-          return false;
-        }
+        if (statusFilter === 'all') return true;
+        return item.status === statusFilter;
       })
       .sort((a, b) => {
         try {
@@ -93,17 +87,44 @@ export const DepositList: React.FC<DepositListProps> = ({ deposits, onTriggerRol
       });
   };
 
-  const filteredDeposits = getActionRequiredDeposits(deposits);
+  const filteredDeposits = getFilteredDeposits(deposits);
   const rolloverChain = selectedDeposit ? getRolloverChain(selectedDeposit) : [];
+
+  const statusLabels: Record<StatusFilter, string> = {
+    active: 'Đang hoạt động',
+    matured: 'Đã đáo hạn',
+    rolled_over: 'Đã tái tục',
+    all: 'Tất cả',
+  };
 
   return (
     <div className="space-y-4">
+      {/* Status Filter */}
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {(Object.keys(statusLabels) as StatusFilter[]).map((key) => {
+          const count = key === 'all' ? deposits.length : deposits.filter(d => d.status === key).length;
+          return (
+            <button
+              key={key}
+              onClick={() => setStatusFilter(key)}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg border whitespace-nowrap transition cursor-pointer ${
+                statusFilter === key
+                  ? 'bg-[#5288c1]/20 text-[#64b5f6] border-[#5288c1]/40'
+                  : 'bg-[#17212b] text-[#708499] border-[#2c3847] hover:border-[#5288c1]/30'
+              }`}
+            >
+              {statusLabels[key]} ({count})
+            </button>
+          );
+        })}
+      </div>
+
       {filteredDeposits.length === 0 ? (
         <div className="text-center py-12 px-4 bg-[#0e1621] border border-[#2b394a] rounded-2xl space-y-3">
-          <span className="text-5xl block">🎉</span>
-          <h3 className="text-base font-semibold text-[#f5f5f5]">Không có khoản đáo hạn</h3>
+          <span className="text-5xl block">📭</span>
+          <h3 className="text-base font-semibold text-[#f5f5f5]">Không có khoản nào</h3>
           <p className="text-xs text-[#708499] max-w-xs mx-auto">
-            Tất cả các khoản tiết kiệm của bạn đều an toàn và chưa đến kỳ hạn cần xử lý (hạn còn &gt; 3 ngày).
+            Không tìm thấy khoản tiết kiệm nào với trạng thái "{statusLabels[statusFilter]}".
           </p>
         </div>
       ) : (
