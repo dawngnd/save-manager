@@ -55,12 +55,46 @@ export const GrowthChart: React.FC<GrowthChartProps> = ({ deposits }) => {
     const ctx = canvasRef.current.getContext('2d');
     if (!ctx) return;
 
-    // Chiều rộng canvas = 60px mỗi tháng, tối thiểu 100% container
-    const minWidth = Math.max(data.length * 60, scrollContainerRef.current?.clientWidth || 400);
+    // Tìm index tháng hiện tại
+    const now = new Date();
+    const currentMonthLabel = `${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+    const todayIndex = data.findIndex(d => d.date === currentMonthLabel);
+
+    // Custom plugin: vẽ đường xanh green tại tháng hiện tại
+    const todayLinePlugin = {
+      id: 'todayLine',
+      afterDraw(chart: Chart) {
+        if (todayIndex < 0) return;
+        const xScale = chart.scales['x'];
+        const yScale = chart.scales['y'];
+        if (!xScale || !yScale) return;
+        const x = xScale.getPixelForValue(todayIndex);
+        const drawCtx = chart.ctx;
+        drawCtx.save();
+        drawCtx.beginPath();
+        drawCtx.setLineDash([4, 4]);
+        drawCtx.strokeStyle = '#4caf50';
+        drawCtx.lineWidth = 2;
+        drawCtx.moveTo(x, yScale.top);
+        drawCtx.lineTo(x, yScale.bottom);
+        drawCtx.stroke();
+        drawCtx.setLineDash([]);
+        drawCtx.fillStyle = '#4caf50';
+        drawCtx.font = 'bold 10px sans-serif';
+        drawCtx.textAlign = 'center';
+        drawCtx.fillText('Hiện tại', x, yScale.top - 4);
+        drawCtx.restore();
+      }
+    };
+
+    // 90px mỗi tháng cho dễ đọc trên mobile
+    const containerWidth = scrollContainerRef.current?.clientWidth || 400;
+    const minWidth = Math.max(data.length * 90, containerWidth);
     canvasRef.current.style.width = `${minWidth}px`;
     canvasRef.current.width = minWidth * (window.devicePixelRatio || 1);
 
     chartInstanceRef.current = new Chart(ctx, {
+      plugins: [todayLinePlugin],
       type: 'line',
       data: {
         labels: data.map(d => d.date),
@@ -82,6 +116,9 @@ export const GrowthChart: React.FC<GrowthChartProps> = ({ deposits }) => {
       options: {
         responsive: false,
         maintainAspectRatio: false,
+        layout: {
+          padding: { top: 16 }
+        },
         plugins: {
           legend: { display: false },
           tooltip: {
@@ -116,9 +153,9 @@ export const GrowthChart: React.FC<GrowthChartProps> = ({ deposits }) => {
             },
             ticks: {
               color: '#708499',
-              font: { size: 10 },
-              maxRotation: 45,
-              minRotation: 45,
+              font: { size: 11 },
+              maxRotation: 0,
+              minRotation: 0,
             }
           },
           y: {
@@ -137,9 +174,14 @@ export const GrowthChart: React.FC<GrowthChartProps> = ({ deposits }) => {
       }
     });
 
-    // Scroll sang cuối (phần mới nhất)
+    // Scroll tới tháng hiện tại (canh giữa viewport)
     if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollLeft = scrollContainerRef.current.scrollWidth;
+      if (todayIndex >= 0) {
+        const scrollTarget = (todayIndex / data.length) * minWidth - containerWidth / 2;
+        scrollContainerRef.current.scrollLeft = Math.max(0, scrollTarget);
+      } else {
+        scrollContainerRef.current.scrollLeft = scrollContainerRef.current.scrollWidth;
+      }
     }
 
     return () => {
