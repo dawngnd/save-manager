@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { callBackendApi } from '../api';
 import { formatMaskDate } from '../utils/dateMask';
 import { calculateDaysBetween, calculateExpectedInterest } from '../utils/interest';
+import { useUsersCache } from '../hooks/useUsersCache';
 
 interface DepositFormProps {
   isOpen: boolean;
@@ -21,6 +22,7 @@ export const DepositForm: React.FC<DepositFormProps> = ({
   onClose,
   onSuccess,
 }) => {
+  const { users, loading: usersLoading, clearCache } = useUsersCache();
   const [userBankcode, setUserBankcode] = useState<string>('');
   const [amount, setAmount] = useState<string>('');
   const [interestRate, setInterestRate] = useState<string>('');
@@ -275,19 +277,32 @@ export const DepositForm: React.FC<DepositFormProps> = ({
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4 text-sm">
-            {/* User Bankcode */}
+            {/* User Bankcode Dropdown */}
             <div className="space-y-1">
-              <label htmlFor="user-bankcode" className="text-xs text-[#708499] font-semibold uppercase tracking-wider block">
-                Tài khoản (user_bankcode)
-              </label>
-              <input
+              <div className="flex justify-between items-center">
+                <label htmlFor="user-bankcode" className="text-xs text-[#708499] font-semibold uppercase tracking-wider">
+                  Tài khoản
+                </label>
+                <button
+                  type="button"
+                  onClick={clearCache}
+                  disabled={usersLoading}
+                  className="text-[10px] text-[#64b5f6] hover:text-[#90caf9] font-medium transition cursor-pointer disabled:opacity-50"
+                >
+                  {usersLoading ? '⏳ Đang tải...' : '🔄 Làm mới'}
+                </button>
+              </div>
+              <select
                 id="user-bankcode"
-                type="text"
                 value={userBankcode}
-                placeholder="Ví dụ: dangnd_VCB"
                 onChange={(e) => setUserBankcode(e.target.value)}
-                className="w-full bg-[#17212b] border border-[#2c3847] focus:border-[#5288c1] rounded-xl px-4 py-3 text-[#f5f5f5] focus:outline-none transition"
-              />
+                className="w-full bg-[#17212b] border border-[#2c3847] focus:border-[#5288c1] rounded-xl px-4 py-3 text-[#f5f5f5] focus:outline-none transition appearance-none cursor-pointer"
+              >
+                <option value="" disabled>-- Chọn tài khoản --</option>
+                {users.map((u) => (
+                  <option key={u} value={u}>{u}</option>
+                ))}
+              </select>
             </div>
             {/* Amount */}
             <div className="space-y-1">
