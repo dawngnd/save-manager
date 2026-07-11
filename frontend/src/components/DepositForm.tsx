@@ -6,7 +6,6 @@ import { calculateDaysBetween, calculateExpectedInterest } from '../utils/intere
 interface DepositFormProps {
   isOpen: boolean;
   onClose: () => void;
-  usernameBankcode: string;
   onSuccess: () => void;
 }
 
@@ -20,9 +19,9 @@ interface FormErrors {
 export const DepositForm: React.FC<DepositFormProps> = ({
   isOpen,
   onClose,
-  usernameBankcode,
   onSuccess,
 }) => {
+  const [userBankcode, setUserBankcode] = useState<string>('');
   const [amount, setAmount] = useState<string>('');
   const [interestRate, setInterestRate] = useState<string>('');
   const [createdAt, setCreatedAt] = useState<string>('');
@@ -195,7 +194,7 @@ export const DepositForm: React.FC<DepositFormProps> = ({
       
       const payload = {
         action: 'add_deposit',
-        username_bankcode: usernameBankcode,
+        username_bankcode: userBankcode,
         data: {
           amount: parseFloat(amount),
           interest_rate: parseFloat(interestRate),
@@ -276,6 +275,20 @@ export const DepositForm: React.FC<DepositFormProps> = ({
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4 text-sm">
+            {/* User Bankcode */}
+            <div className="space-y-1">
+              <label htmlFor="user-bankcode" className="text-xs text-[#708499] font-semibold uppercase tracking-wider block">
+                Tài khoản (user_bankcode)
+              </label>
+              <input
+                id="user-bankcode"
+                type="text"
+                value={userBankcode}
+                placeholder="Ví dụ: dangnd_VCB"
+                onChange={(e) => setUserBankcode(e.target.value)}
+                className="w-full bg-[#17212b] border border-[#2c3847] focus:border-[#5288c1] rounded-xl px-4 py-3 text-[#f5f5f5] focus:outline-none transition"
+              />
+            </div>
             {/* Amount */}
             <div className="space-y-1">
               <label htmlFor="amount" className="text-xs text-[#708499] font-semibold uppercase tracking-wider block">

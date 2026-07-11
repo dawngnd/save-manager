@@ -214,11 +214,6 @@ function handleWriteActionWithLock(action, payload) {
  * @returns {GoogleAppsScript.Content.TextOutput|object}
  */
 function executeGetDeposits(sheets, payload) {
-  const usernameBankcode = payload.username_bankcode;
-  if (!usernameBankcode) {
-    throw new Error("Thiếu thông tin username_bankcode.");
-  }
-  
   const depositsSheet = sheets.deposits;
   const lastRow = depositsSheet.getLastRow();
   const result = [];
@@ -226,18 +221,16 @@ function executeGetDeposits(sheets, payload) {
   if (lastRow > 1) {
     const values = depositsSheet.getRange(2, 1, lastRow - 1, 8).getValues();
     for (let i = 0; i < values.length; i++) {
-      if (values[i][7] === usernameBankcode) {
-        result.push({
-          id: values[i][0],
-          amount: Number(values[i][1]),
-          interest_rate: Number(values[i][2]),
-          status: values[i][3],
-          expected_interest: Number(values[i][4]),
-          created_at: values[i][5],
-          maturity_at: values[i][6],
-          user_bankcode: values[i][7]
-        });
-      }
+      result.push({
+        id: values[i][0],
+        amount: Number(values[i][1]),
+        interest_rate: Number(values[i][2]),
+        status: values[i][3],
+        expected_interest: Number(values[i][4]),
+        created_at: values[i][5],
+        maturity_at: values[i][6],
+        user_bankcode: values[i][7]
+      });
     }
   }
   
