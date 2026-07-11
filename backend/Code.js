@@ -541,6 +541,17 @@ function executeRolloverDeposit(sheets, payload) {
  * @returns {Date}
  */
 function parseDateString(dateStr) {
+  // Google Sheets có thể tự chuyển text thành Date object
+  if (dateStr instanceof Date) {
+    if (isNaN(dateStr.getTime())) {
+      throw new Error('Giá trị Date object không hợp lệ.');
+    }
+    return new Date(dateStr.getFullYear(), dateStr.getMonth(), dateStr.getDate(), 0, 0, 0, 0);
+  }
+  
+  // Chuyển về string nếu cần
+  dateStr = String(dateStr).trim();
+  
   if (!/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) {
     throw new Error('Định dạng ngày không hợp lệ. Vui lòng sử dụng DD/MM/YYYY');
   }
@@ -733,10 +744,21 @@ function checkMaturityAndSendAlerts() {
     
     messageText += "Vui lòng mở Save Manager để thực hiện cập nhật hoặc tái tục các khoản gửi này.";
     
+    const properties = PropertiesService.getScriptProperties();
+    const miniAppUrl = properties.getProperty("MINI_APP_URL") || "";
+    
     const replyPayload = {
       chat_id: chatId,
       text: messageText,
-      parse_mode: "Markdown"
+      parse_mode: "Markdown",
+      reply_markup: {
+        inline_keyboard: [[
+          {
+            text: "📊 Mở Save Manager",
+            web_app: { url: miniAppUrl }
+          }
+        ]]
+      }
     };
     
     const response = sendTelegramApi("sendMessage", replyPayload);
