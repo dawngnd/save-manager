@@ -200,73 +200,111 @@ export const GrowthChart: React.FC<GrowthChartProps> = ({ deposits }) => {
 };
 
 /**
- * Maps active/matured deposits to a step-wise timeseries timeline.
- * Horizon starts from today to the max maturity date of active deposits.
+ * Vẽ biểu đồ tăng trưởng step-wise từ lịch sử rollover.
+ * Mỗi khoản gửi = flat line tại amount, đến ngày đáo hạn thì +expected_interest.
+ *
+ * Ví dụ: deposit 5,000,000 đáo hạn 10/10/2026, lãi 500,000
+ *   → 10/10/2025 ~ 09/10/2026: 5,000,000
+ *   → 10/10/2026:             5,500,000
  */
 export function generateStepWiseGrowthData(deposits: Deposit[]): ChartDataPoint[] {
-  const activeDeposits = deposits.filter(
-    d => d.status === 'active' || d.status === 'matured'
-  );
+  if (deposits.length === 0) return [];
 
-  if (activeDeposits.length === 0) {
-    return [];
-  }
+  // Tìm gốc (deposits không có parent_id)
+  const origins = deposits.filter(d => !d.parent_id);
+  if (origins.length === 0) return [];
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  // Find the furthest maturity date among active deposits
-  let maxMaturity = new Date(today);
-  activeDeposits.forEach(d => {
-    try {
-      const matDate = parseClientDateString(d.maturity_at);
-      if (matDate > maxMaturity) {
-        maxMaturity = matDate;
-      }
-    } catch (e) {
-      console.error('Lỗi phân tích ngày đáo hạn:', e);
+  // Truy vết chuỗi tái tục từ gốc
+  const buildChain = (origin: Deposit): Deposit[] => {
+    const chain: Deposit[] = [origin];
+    let current = origin;
+    const usedIds = new Set<string>([origin.id]);
+    while (true) {
+      const child = deposits.find(d => d.parent_id === current.id && !usedIds.has(d.id));
+      if (!child) break;
+      chain.push(child);
+      usedIds.add(child.id);
+      current = child;
     }
+    return chain;
+  };
+
+  // Tính tổng tài sản tại thời điểm targetDate
+  // Với mỗi chain, chỉ tính khoản cuối cùng có created_at <= targetDate
+  const computeTotalAt = (targetDate: Date, chains: Deposit[][]): { principal: number; interest: number } => {
+    let principal = 0;
+    let interest = 0;
+
+    chains.forEach(chain => {
+      // Tìm khoản active tại thời điểm targetDate
+      let activeDep: Deposit | null = null;
+      for (const dep of chain) {
+        try {
+          const creDate = parseClientDateString(dep.created_at);
+          if (creDate <= targetDate) {
+            activeDep = dep;
+          }
+        } catch { /* skip */ }
+      }
+
+      if (activeDep) {
+        principal += activeDep.amount;
+        try {
+          const matDate = parseClientDateString(activeDep.maturity_at);
+          if (targetDate >= matDate) {
+            interest += activeDep.expected_interest;
+          }
+        } catch { /* skip */ }
+      }
+    });
+
+    return { principal, interest };
+  };
+
+  // Build tất cả chains
+  const chains = origins.map(o => buildChain(o));
+
+  // Thu thập tất cả mốc thời gian (created_at + maturity_at)
+  const uniqueDates = new Map<string, Date>();
+  const formatDate = (d: Date): string => {
+    return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+  };
+
+  chains.forEach(chain => {
+    chain.forEach(dep => {
+      try {
+        const creDate = parseClientDateString(dep.created_at);
+        uniqueDates.set(dep.created_at, creDate);
+
+        const matDate = parseClientDateString(dep.maturity_at);
+        uniqueDates.set(dep.maturity_at, matDate);
+
+        // Thêm ngày trước đáo hạn (để thấy step nhảy rõ)
+        const dayBefore = new Date(matDate);
+        dayBefore.setDate(dayBefore.getDate() - 1);
+        const dbKey = formatDate(dayBefore);
+        if (!uniqueDates.has(dbKey)) {
+          uniqueDates.set(dbKey, dayBefore);
+        }
+      } catch { /* skip */ }
+    });
   });
 
+  // Sắp xếp và tạo data points
+  const sortedDates = Array.from(uniqueDates.entries())
+    .sort((a, b) => a[1].getTime() - b[1].getTime());
+
   const dataPoints: ChartDataPoint[] = [];
-  const currentDate = new Date(today);
-
-  // Generate step-wise data for each day from today to maxMaturity
-  while (currentDate <= maxMaturity) {
-    let totalPrincipal = 0;
-    let totalInterest = 0;
-
-    activeDeposits.forEach(d => {
-      try {
-        const matDate = parseClientDateString(d.maturity_at);
-        
-        // Principal is always present for active/matured deposits
-        totalPrincipal += d.amount;
-        
-        // Expected interest is only realized/added on or after maturity date
-        if (currentDate >= matDate) {
-          totalInterest += d.expected_interest;
-        }
-      } catch (e) {
-        totalPrincipal += d.amount; // Fallback
-      }
-    });
-
-    const dd = String(currentDate.getDate()).padStart(2, '0');
-    const mm = String(currentDate.getMonth() + 1).padStart(2, '0');
-    const yyyy = currentDate.getFullYear();
-    const dateStr = `${dd}/${mm}/${yyyy}`;
-
+  sortedDates.forEach(([dateStr, date]) => {
+    const { principal, interest } = computeTotalAt(date, chains);
     dataPoints.push({
       date: dateStr,
-      total: totalPrincipal + totalInterest,
-      principal: totalPrincipal,
-      interest: totalInterest
+      total: principal + interest,
+      principal,
+      interest
     });
-
-    // Advance to next day
-    currentDate.setDate(currentDate.getDate() + 1);
-  }
+  });
 
   return dataPoints;
 }
+
