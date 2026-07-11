@@ -101,6 +101,10 @@ export const DepositList: React.FC<DepositListProps> = ({ deposits, onTriggerRol
                 <span className="text-[#64b5f6] font-semibold">{selectedDeposit.id}</span>
               </div>
               <div className="flex justify-between border-b border-[#2c3847]/40 pb-2">
+                <span className="text-[#708499]">Tài khoản:</span>
+                <span className="text-[#f5f5f5] font-semibold">{selectedDeposit.user_bankcode}</span>
+              </div>
+              <div className="flex justify-between border-b border-[#2c3847]/40 pb-2">
                 <span className="text-[#708499]">Số tiền gốc:</span>
                 <span className="text-[#f5f5f5] font-bold">{formatCurrency(selectedDeposit.amount)}</span>
               </div>

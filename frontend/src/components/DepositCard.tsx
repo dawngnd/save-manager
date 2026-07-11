@@ -47,7 +47,7 @@ export const DepositCard: React.FC<DepositCardProps> = ({ deposit, onClick }) =>
     >
       <div className="flex justify-between items-start">
         <div className="space-y-1">
-          <div className="text-xs text-[#708499] font-medium uppercase tracking-wider">Số tiền gửi</div>
+          <div className="text-xs text-[#708499] font-medium uppercase tracking-wider">{deposit.user_bankcode}</div>
           <div className="text-lg font-bold text-[#f5f5f5]">{formatCurrency(deposit.amount)}</div>
         </div>
         <div className={`px-2.5 py-1 text-xs font-semibold rounded-lg border ${statusColorClass}`}>

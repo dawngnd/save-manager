@@ -287,6 +287,10 @@ function executeAddDeposit(sheets, payload) {
   
   sheets.deposits.appendRow(newRow);
   
+  // Force plain text format cho cột created_at (6) và maturity_at (7)
+  const newLastRow = sheets.deposits.getLastRow();
+  sheets.deposits.getRange(newLastRow, 6, 1, 2).setNumberFormat('@');
+  
   return buildJsonResponse("success", {
     id: depositId,
     amount: amount,
@@ -521,6 +525,10 @@ function executeRolloverDeposit(sheets, payload) {
   ];
   
   depositsSheet.appendRow(newRow);
+  
+  // Force plain text format cho cột created_at (6) và maturity_at (7)
+  const newLastRow = depositsSheet.getLastRow();
+  depositsSheet.getRange(newLastRow, 6, 1, 2).setNumberFormat('@');
   
   return buildJsonResponse("success", {
     old_deposit: {
