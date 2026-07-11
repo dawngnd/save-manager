@@ -804,13 +804,16 @@ function verifyTelegramWebAppData(initData, botToken) {
     }
 
     const hash = params['hash'];
-    if (!hash) return false;
+    if (!hash) {
+      Logger.log("Verify failed: không tìm thấy hash trong initData");
+      return false;
+    }
 
     // Kiểm tra thời gian hết hạn (auth_date không quá 24h để tránh replay attack)
     const authDate = parseInt(params['auth_date'], 10);
     const currentTime = Math.floor(Date.now() / 1000);
     if (isNaN(authDate) || (currentTime - authDate) > 86400) {
-      Logger.log("Cảnh báo: Yêu cầu xác thực quá hạn (24h).");
+      Logger.log("Verify failed: auth_date quá hạn. auth_date=" + authDate + ", currentTime=" + currentTime + ", diff=" + (currentTime - authDate) + "s");
       return false;
     }
 
@@ -818,10 +821,11 @@ function verifyTelegramWebAppData(initData, botToken) {
     const sortedKeys = Object.keys(params).filter(k => k !== 'hash').sort();
     const dataCheckString = sortedKeys.map(k => `${k}=${params[k]}`).join('\n');
 
-    // Tạo Secret Key bằng cách ký Bot Token với key hằng số "WebAppData"
-    const secretKey = Utilities.computeHmacSha256Signature(botToken, "WebAppData");
+    // Tạo Secret Key: HMAC-SHA256(key=botToken, value="WebAppData")
+    // GAS API: computeHmacSha256Signature(value, key)
+    const secretKey = Utilities.computeHmacSha256Signature("WebAppData", botToken);
 
-    // Ký dataCheckString bằng secretKey vừa tạo
+    // Ký dataCheckString bằng secretKey (byte array)
     const signatureBytes = Utilities.computeHmacSha256Signature(dataCheckString, secretKey);
 
     // Chuyển đổi byte array sang hex string
@@ -831,6 +835,9 @@ function verifyTelegramWebAppData(initData, botToken) {
       return hex.length === 1 ? '0' + hex : hex;
     }).join('');
 
+    if (signatureHex !== hash) {
+      Logger.log("Verify failed: HMAC mismatch. expected=" + hash.substring(0, 16) + "... got=" + signatureHex.substring(0, 16) + "...");
+    }
     return signatureHex === hash;
   } catch (err) {
     Logger.log("Lỗi trong verifyTelegramWebAppData: " + err.toString());
