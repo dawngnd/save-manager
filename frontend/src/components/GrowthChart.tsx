@@ -14,7 +14,6 @@ import {
 import { Deposit } from '../types';
 import { parseClientDateString } from '../utils/interest';
 
-// Register Chart.js components for tree shaking
 Chart.register(
   LineController,
   LineElement,
@@ -41,6 +40,7 @@ interface GrowthChartProps {
 export const GrowthChart: React.FC<GrowthChartProps> = ({ deposits }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const chartInstanceRef = useRef<Chart | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
 
   const data = generateStepWiseGrowthData(deposits);
@@ -48,13 +48,17 @@ export const GrowthChart: React.FC<GrowthChartProps> = ({ deposits }) => {
   useEffect(() => {
     if (isCollapsed || data.length === 0 || !canvasRef.current) return;
 
-    // Destroy existing chart to prevent memory leaks and reuse errors
     if (chartInstanceRef.current) {
       chartInstanceRef.current.destroy();
     }
 
     const ctx = canvasRef.current.getContext('2d');
     if (!ctx) return;
+
+    // Chiều rộng canvas = 60px mỗi tháng, tối thiểu 100% container
+    const minWidth = Math.max(data.length * 60, scrollContainerRef.current?.clientWidth || 400);
+    canvasRef.current.style.width = `${minWidth}px`;
+    canvasRef.current.width = minWidth * (window.devicePixelRatio || 1);
 
     chartInstanceRef.current = new Chart(ctx, {
       type: 'line',
@@ -67,15 +71,16 @@ export const GrowthChart: React.FC<GrowthChartProps> = ({ deposits }) => {
             borderColor: '#64b5f6',
             backgroundColor: 'rgba(100, 181, 246, 0.08)',
             fill: true,
-            tension: 0, // Sharp step-wise line segments
-            pointRadius: data.length > 50 ? 0 : 2, // Hide points if there are too many data points
-            pointHoverRadius: 5,
+            tension: 0,
+            pointRadius: 3,
+            pointBackgroundColor: '#64b5f6',
+            pointHoverRadius: 6,
             borderWidth: 2,
           }
         ]
       },
       options: {
-        responsive: true,
+        responsive: false,
         maintainAspectRatio: false,
         plugins: {
           legend: { display: false },
@@ -91,7 +96,7 @@ export const GrowthChart: React.FC<GrowthChartProps> = ({ deposits }) => {
               label: function (context) {
                 const index = context.dataIndex;
                 const point = data[index];
-                const val = context.parsed.y !== null && context.parsed.y !== undefined ? context.parsed.y : 0;
+                const val = context.parsed.y ?? 0;
                 if (point) {
                   return [
                     `Tổng: ${val.toLocaleString('vi-VN')} ₫`,
@@ -108,18 +113,17 @@ export const GrowthChart: React.FC<GrowthChartProps> = ({ deposits }) => {
           x: {
             grid: {
               color: 'rgba(44, 56, 71, 0.3)',
-              tickBorderDash: [2, 2]
             },
             ticks: {
               color: '#708499',
-              maxTicksLimit: 6,
-              font: { size: 10 }
+              font: { size: 10 },
+              maxRotation: 45,
+              minRotation: 45,
             }
           },
           y: {
             grid: {
               color: 'rgba(44, 56, 71, 0.3)',
-              tickBorderDash: [2, 2]
             },
             ticks: {
               color: '#708499',
@@ -132,6 +136,11 @@ export const GrowthChart: React.FC<GrowthChartProps> = ({ deposits }) => {
         }
       }
     });
+
+    // Scroll sang cuối (phần mới nhất)
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollLeft = scrollContainerRef.current.scrollWidth;
+    }
 
     return () => {
       if (chartInstanceRef.current) {
@@ -150,33 +159,32 @@ export const GrowthChart: React.FC<GrowthChartProps> = ({ deposits }) => {
     );
   }
 
-  // Calculate current and peak projections
   const currentTotal = data[0].total;
   const peakTotal = data[data.length - 1].total;
   const totalInterestEarned = peakTotal - data[0].principal;
 
   return (
     <div className="bg-[#0e1621] border border-[#2b394a] rounded-2xl p-4 shadow-2xl space-y-3">
-      {/* Header with toggle */}
+      {/* Header */}
       <div className="flex justify-between items-center border-b border-[#2b394a] pb-2">
         <div className="flex items-center space-x-2">
           <span className="text-lg">📈</span>
-          <h2 className="text-sm font-bold text-[#f5f5f5]">Biểu đồ tăng trưởng tài sản</h2>
+          <h2 className="text-sm font-bold text-[#f5f5f5]">Biểu đồ tăng trưởng</h2>
         </div>
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
           className="px-2.5 py-1 text-xs font-semibold bg-[#2c3847] hover:bg-[#374657] text-[#64b5f6] rounded-lg transition duration-150 cursor-pointer"
         >
-          {isCollapsed ? 'Hiện biểu đồ' : 'Ẩn biểu đồ'}
+          {isCollapsed ? 'Hiện' : 'Ẩn'}
         </button>
       </div>
 
       {!isCollapsed && (
         <>
-          {/* Summary Row */}
+          {/* Summary */}
           <div className="grid grid-cols-2 gap-3 text-xs border-b border-[#2b394a]/50 pb-2">
             <div>
-              <div className="text-[#708499]">Tài sản hiện tại</div>
+              <div className="text-[#708499]">Khởi đầu</div>
               <div className="font-bold text-[#f5f5f5]">{currentTotal.toLocaleString('vi-VN')} ₫</div>
             </div>
             <div>
@@ -185,13 +193,22 @@ export const GrowthChart: React.FC<GrowthChartProps> = ({ deposits }) => {
             </div>
           </div>
 
-          {/* Chart Canvas */}
-          <div className="h-44 w-full relative">
-            <canvas ref={canvasRef} />
+          {/* Scrollable Chart */}
+          <div
+            ref={scrollContainerRef}
+            className="h-48 w-full overflow-x-auto overflow-y-hidden relative"
+            style={{ WebkitOverflowScrolling: 'touch' }}
+          >
+            <canvas ref={canvasRef} style={{ height: '100%' }} />
           </div>
-          
-          <div className="text-[10px] text-[#708499] text-center italic">
-            * Ước tính tăng trưởng step-wise từ hôm nay đến {data[data.length - 1].date} (+{(totalInterestEarned).toLocaleString('vi-VN')} ₫ lãi tích lũy)
+
+          <div className="flex justify-between items-center">
+            <div className="text-[10px] text-[#708499] italic">
+              {data[0].date} → {data[data.length - 1].date} · +{totalInterestEarned.toLocaleString('vi-VN')} ₫ lãi
+            </div>
+            <div className="text-[10px] text-[#708499]">
+              ← vuốt ngang →
+            </div>
           </div>
         </>
       )}
@@ -200,21 +217,15 @@ export const GrowthChart: React.FC<GrowthChartProps> = ({ deposits }) => {
 };
 
 /**
- * Vẽ biểu đồ tăng trưởng step-wise từ lịch sử rollover.
- * Mỗi khoản gửi = flat line tại amount, đến ngày đáo hạn thì +expected_interest.
- *
- * Ví dụ: deposit 5,000,000 đáo hạn 10/10/2026, lãi 500,000
- *   → 10/10/2025 ~ 09/10/2026: 5,000,000
- *   → 10/10/2026:             5,500,000
+ * Biểu đồ step-wise theo bước 1 tháng.
+ * Từ created_at sớm nhất → maturity_at muộn nhất.
  */
 export function generateStepWiseGrowthData(deposits: Deposit[]): ChartDataPoint[] {
   if (deposits.length === 0) return [];
 
-  // Tìm gốc (deposits không có parent_id)
   const origins = deposits.filter(d => !d.parent_id);
   if (origins.length === 0) return [];
 
-  // Truy vết chuỗi tái tục từ gốc
   const buildChain = (origin: Deposit): Deposit[] => {
     const chain: Deposit[] = [origin];
     let current = origin;
@@ -229,14 +240,29 @@ export function generateStepWiseGrowthData(deposits: Deposit[]): ChartDataPoint[
     return chain;
   };
 
-  // Tính tổng tài sản tại thời điểm targetDate
-  // Với mỗi chain, chỉ tính khoản cuối cùng có created_at <= targetDate
-  const computeTotalAt = (targetDate: Date, chains: Deposit[][]): { principal: number; interest: number } => {
+  const chains = origins.map(o => buildChain(o));
+
+  // Tìm ngày sớm nhất và muộn nhất
+  let minDate: Date | null = null;
+  let maxDate: Date | null = null;
+
+  deposits.forEach(dep => {
+    try {
+      const cre = parseClientDateString(dep.created_at);
+      const mat = parseClientDateString(dep.maturity_at);
+      if (!minDate || cre < minDate) minDate = cre;
+      if (!maxDate || mat > maxDate) maxDate = mat;
+    } catch { /* skip */ }
+  });
+
+  if (!minDate || !maxDate) return [];
+
+  // Tính tổng tại thời điểm T
+  const computeTotalAt = (targetDate: Date): { principal: number; interest: number } => {
     let principal = 0;
     let interest = 0;
 
     chains.forEach(chain => {
-      // Tìm khoản active tại thời điểm targetDate
       let activeDep: Deposit | null = null;
       for (const dep of chain) {
         try {
@@ -261,50 +287,44 @@ export function generateStepWiseGrowthData(deposits: Deposit[]): ChartDataPoint[
     return { principal, interest };
   };
 
-  // Build tất cả chains
-  const chains = origins.map(o => buildChain(o));
-
-  // Thu thập tất cả mốc thời gian (created_at + maturity_at)
-  const uniqueDates = new Map<string, Date>();
-  const formatDate = (d: Date): string => {
-    return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
-  };
-
-  chains.forEach(chain => {
-    chain.forEach(dep => {
-      try {
-        const creDate = parseClientDateString(dep.created_at);
-        uniqueDates.set(dep.created_at, creDate);
-
-        const matDate = parseClientDateString(dep.maturity_at);
-        uniqueDates.set(dep.maturity_at, matDate);
-
-        // Thêm ngày trước đáo hạn (để thấy step nhảy rõ)
-        const dayBefore = new Date(matDate);
-        dayBefore.setDate(dayBefore.getDate() - 1);
-        const dbKey = formatDate(dayBefore);
-        if (!uniqueDates.has(dbKey)) {
-          uniqueDates.set(dbKey, dayBefore);
-        }
-      } catch { /* skip */ }
-    });
-  });
-
-  // Sắp xếp và tạo data points
-  const sortedDates = Array.from(uniqueDates.entries())
-    .sort((a, b) => a[1].getTime() - b[1].getTime());
-
+  // Tạo data points theo bước 1 tháng
   const dataPoints: ChartDataPoint[] = [];
-  sortedDates.forEach(([dateStr, date]) => {
-    const { principal, interest } = computeTotalAt(date, chains);
+  const cursor = new Date(minDate);
+  cursor.setDate(1); // Đầu tháng
+
+  while (cursor <= maxDate) {
+    const dd = String(cursor.getDate()).padStart(2, '0');
+    const mm = String(cursor.getMonth() + 1).padStart(2, '0');
+    const yyyy = cursor.getFullYear();
+    const dateStr = `${mm}/${yyyy}`;
+
+    const { principal, interest } = computeTotalAt(cursor);
     dataPoints.push({
       date: dateStr,
       total: principal + interest,
       principal,
       interest
     });
-  });
+
+    // Tiến tới tháng tiếp theo
+    cursor.setMonth(cursor.getMonth() + 1);
+  }
+
+  // Thêm điểm cuối cùng (ngày đáo hạn chính xác) nếu chưa có
+  const lastPoint = dataPoints[dataPoints.length - 1];
+  const { principal: endP, interest: endI } = computeTotalAt(maxDate);
+  const endTotal = endP + endI;
+  if (!lastPoint || lastPoint.total !== endTotal) {
+    const dd = String(maxDate.getDate()).padStart(2, '0');
+    const mm = String(maxDate.getMonth() + 1).padStart(2, '0');
+    const yyyy = maxDate.getFullYear();
+    dataPoints.push({
+      date: `${dd}/${mm}/${yyyy}`,
+      total: endTotal,
+      principal: endP,
+      interest: endI
+    });
+  }
 
   return dataPoints;
 }
-
