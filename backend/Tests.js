@@ -267,7 +267,7 @@ function testDoPostRouting() {
     // 2. Action không hợp lệ
     const invalidEvent = {
       postData: {
-        contents: JSON.stringify({ action: "invalid_action" })
+        contents: JSON.stringify({ action: "invalid_action", initData: "mock_hash" })
       }
     };
     response = getResponseData(doPost(invalidEvent));
@@ -279,7 +279,8 @@ function testDoPostRouting() {
       postData: {
         contents: JSON.stringify({
           action: "get_deposits",
-          username_bankcode: "user1_vcb"
+          username_bankcode: "user1_vcb",
+          initData: "mock_hash"
         })
       }
     };
@@ -292,7 +293,8 @@ function testDoPostRouting() {
         contents: JSON.stringify({
           action: "add_deposit",
           username_bankcode: "user1_vcb",
-          data: { amount: 1000000, interest_rate: 6.0, created_at: "10/07/2026", maturity_at: "10/07/2027" }
+          data: { amount: 1000000, interest_rate: 6.0, created_at: "10/07/2026", maturity_at: "10/07/2027" },
+          initData: "mock_hash"
         })
       }
     };
@@ -309,7 +311,8 @@ function testDoPostRouting() {
           new_amount: 1200000,
           new_interest_rate: 5.5,
           created_at: "10/07/2027",
-          maturity_at: "10/07/2028"
+          maturity_at: "10/07/2028",
+          initData: "mock_hash"
         })
       }
     };
