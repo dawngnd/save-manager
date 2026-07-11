@@ -25,30 +25,21 @@ jobs:
 
       - name: Write clasp credentials
         env:
-          CLASP_ACCESS_TOKEN: ${{ secrets.CLASP_ACCESS_TOKEN }}
           CLASP_REFRESH_TOKEN: ${{ secrets.CLASP_REFRESH_TOKEN }}
-          CLASP_EXPIRY_DATE: ${{ secrets.CLASP_EXPIRY_DATE }}
-          CLASP_CLIENT_ID: ${{ secrets.CLASP_CLIENT_ID }}
-          CLASP_CLIENT_SECRET: ${{ secrets.CLASP_CLIENT_SECRET }}
         run: |
           node -e "
             const fs = require('fs');
             const os = require('os');
             const path = require('path');
             const config = {
-              token: {
-                access_token: process.env.CLASP_ACCESS_TOKEN || '',
-                refresh_token: process.env.CLASP_REFRESH_TOKEN || '',
-                scope: 'https://www.googleapis.com/auth/script.deployments https://www.googleapis.com/auth/script.projects https://www.googleapis.com/auth/drive.metadata.readonly https://www.googleapis.com/auth/logging.read https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/script.webapp.deploy https://www.googleapis.com/auth/cloud-platform',
-                token_type: 'Bearer',
-                expiry_date: Number(process.env.CLASP_EXPIRY_DATE) || 0
-              },
-              oauth2ClientSettings: {
-                clientId: process.env.CLASP_CLIENT_ID || '',
-                clientSecret: process.env.CLASP_CLIENT_SECRET || '',
-                redirectUri: 'http://localhost'
-              },
-              isLocalCreds: false
+              tokens: {
+                default: {
+                  client_id: '1072944905499-vm2v2i5dvn0a0d2o4ca36i1vge8cvbn0.apps.googleusercontent.com',
+                  client_secret: 'v6V3fKV_zWU7iw1DrpO1rknX',
+                  type: 'authorized_user',
+                  refresh_token: process.env.CLASP_REFRESH_TOKEN || ''
+                }
+              }
             };
             fs.writeFileSync(
               path.join(os.homedir(), '.clasprc.json'),

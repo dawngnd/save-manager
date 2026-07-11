@@ -202,51 +202,51 @@ Vào **GitHub repo → Settings → Secrets and variables → Actions → New re
 | Secret Name | Giá trị | Mô tả |
 |-------------|---------|-------|
 | `CLASP_SCRIPT_ID` | `1a2b3c4d5e6f...` | Script ID của dự án GAS |
-| `CLASP_ACCESS_TOKEN` | OAuth access token | Token xác thực clasp |
-| `CLASP_REFRESH_TOKEN` | OAuth refresh token | Token làm mới clasp |
-| `CLASP_CLIENT_ID` | OAuth client ID | ID ứng dụng OAuth |
-| `CLASP_CLIENT_SECRET` | OAuth client secret | Secret ứng dụng OAuth |
-| `CLASP_EXPIRY_DATE` | Timestamp (ms) | Thời gian hết hạn token |
+| `CLASP_REFRESH_TOKEN` | `1//0eXxYz...` | OAuth refresh token từ clasp login |
+
+> [!NOTE]
+> Clasp v3 chỉ cần **2 secrets** cho backend. `client_id` và `client_secret` là giá trị mặc định của clasp, đã được hardcode trong workflow.
 
 ### 6.3 Cách lấy clasp credentials
 
-Sau khi chạy `clasp login` ở máy local, file `~/.clasprc.json` sẽ chứa tất cả thông tin cần thiết:
+**Bước 1**: Đăng nhập clasp ở máy local:
+
+```bash
+clasp login
+```
+
+Trình duyệt mở ra → chọn đúng Google account sở hữu Script → cho phép quyền.
+
+**Bước 2**: Xem file credentials:
 
 ```bash
 cat ~/.clasprc.json
 ```
 
-Output có dạng:
+Output có dạng (clasp v3.x):
 
 ```json
 {
-  "token": {
-    "access_token": "ya29.xxx...",
-    "refresh_token": "1//0xxx...",
-    "scope": "https://www.googleapis.com/auth/...",
-    "token_type": "Bearer",
-    "expiry_date": 1720000000000
-  },
-  "oauth2ClientSettings": {
-    "clientId": "1234567890.apps.googleusercontent.com",
-    "clientSecret": "GOCSPX-xxx...",
-    "redirectUri": "http://localhost"
+  "tokens": {
+    "default": {
+      "client_id": "10729...apps.googleusercontent.com",
+      "client_secret": "v6V3...",
+      "type": "authorized_user",
+      "refresh_token": "1//0eXxYzAbCd...",
+      "access_token": "ya29.a0ARrdaM..."
+    }
   }
 }
 ```
 
-Copy từng giá trị vào GitHub Secrets tương ứng:
+**Bước 3**: Copy giá trị `refresh_token` vào GitHub Secret `CLASP_REFRESH_TOKEN`:
 
 | Trường trong `.clasprc.json` | → GitHub Secret |
 |------------------------------|-----------------|
-| `token.access_token` | `CLASP_ACCESS_TOKEN` |
-| `token.refresh_token` | `CLASP_REFRESH_TOKEN` |
-| `token.expiry_date` | `CLASP_EXPIRY_DATE` |
-| `oauth2ClientSettings.clientId` | `CLASP_CLIENT_ID` |
-| `oauth2ClientSettings.clientSecret` | `CLASP_CLIENT_SECRET` |
+| `tokens.default.refresh_token` | `CLASP_REFRESH_TOKEN` |
 
-> [!WARNING]
-> `access_token` có thời hạn ngắn (1 giờ), nhưng clasp sẽ tự dùng `refresh_token` để lấy token mới. Chỉ cần đảm bảo `refresh_token` vẫn hợp lệ (không bị revoke trong Google Account).
+> [!TIP]
+> Chỉ cần copy giá trị `refresh_token` (ví dụ `1//0eXxYzAbCd...`). Không cần `access_token` vì clasp tự dùng `refresh_token` để lấy access token mới mỗi lần chạy.
 
 ---
 
