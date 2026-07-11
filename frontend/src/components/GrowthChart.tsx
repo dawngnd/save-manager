@@ -42,6 +42,7 @@ export const GrowthChart: React.FC<GrowthChartProps> = ({ deposits }) => {
   const chartInstanceRef = useRef<Chart | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
+  const [chartWidth, setChartWidth] = useState<number>(0);
 
   const data = generateStepWiseGrowthData(deposits);
 
@@ -87,11 +88,10 @@ export const GrowthChart: React.FC<GrowthChartProps> = ({ deposits }) => {
       }
     };
 
-    // 90px mỗi tháng cho dễ đọc trên mobile
+    // 100px mỗi tháng, tối thiểu = container
     const containerWidth = scrollContainerRef.current?.clientWidth || 400;
-    const minWidth = Math.max(data.length * 90, containerWidth);
-    canvasRef.current.style.width = `${minWidth}px`;
-    canvasRef.current.width = minWidth * (window.devicePixelRatio || 1);
+    const calcWidth = Math.max(data.length * 100, containerWidth);
+    setChartWidth(calcWidth);
 
     chartInstanceRef.current = new Chart(ctx, {
       plugins: [todayLinePlugin],
@@ -114,7 +114,7 @@ export const GrowthChart: React.FC<GrowthChartProps> = ({ deposits }) => {
         ]
       },
       options: {
-        responsive: false,
+        responsive: true,
         maintainAspectRatio: false,
         layout: {
           padding: { top: 16 }
@@ -177,7 +177,7 @@ export const GrowthChart: React.FC<GrowthChartProps> = ({ deposits }) => {
     // Scroll tới tháng hiện tại (canh giữa viewport)
     if (scrollContainerRef.current) {
       if (todayIndex >= 0) {
-        const scrollTarget = (todayIndex / data.length) * minWidth - containerWidth / 2;
+        const scrollTarget = (todayIndex / data.length) * calcWidth - containerWidth / 2;
         scrollContainerRef.current.scrollLeft = Math.max(0, scrollTarget);
       } else {
         scrollContainerRef.current.scrollLeft = scrollContainerRef.current.scrollWidth;
@@ -238,10 +238,12 @@ export const GrowthChart: React.FC<GrowthChartProps> = ({ deposits }) => {
           {/* Scrollable Chart */}
           <div
             ref={scrollContainerRef}
-            className="h-48 w-full overflow-x-auto overflow-y-hidden relative"
+            className="w-full overflow-x-auto overflow-y-hidden"
             style={{ WebkitOverflowScrolling: 'touch' }}
           >
-            <canvas ref={canvasRef} style={{ height: '100%' }} />
+            <div style={{ width: chartWidth > 0 ? `${chartWidth}px` : '100%', height: '200px' }}>
+              <canvas ref={canvasRef} />
+            </div>
           </div>
 
           <div className="flex justify-between items-center">
