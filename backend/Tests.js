@@ -251,7 +251,7 @@ function testDoPostRouting() {
   initializeSheets = () => mockSheets;
   
   const originalLockService = typeof LockService !== 'undefined' ? LockService : null;
-  global.LockService = {
+  this.LockService = {
     getScriptLock: () => ({
       tryLock: () => true,
       releaseLock: () => {}
@@ -320,9 +320,9 @@ function testDoPostRouting() {
     // Restore
     initializeSheets = originalInitSheets;
     if (originalLockService) {
-      global.LockService = originalLockService;
+      this.LockService = originalLockService;
     } else {
-      delete global.LockService;
+      delete this.LockService;
     }
   }
 }
@@ -336,7 +336,7 @@ function testLockServiceBehavior() {
   let releaseLockCalled = false;
   let getScriptLockCalled = false;
   
-  global.LockService = {
+  this.LockService = {
     getScriptLock: function() {
       getScriptLockCalled = true;
       return {
@@ -400,9 +400,9 @@ function testLockServiceBehavior() {
   } finally {
     initializeSheets = originalInitSheets;
     if (originalLockService) {
-      global.LockService = originalLockService;
+      this.LockService = originalLockService;
     } else {
-      delete global.LockService;
+      delete this.LockService;
     }
   }
 }
@@ -435,8 +435,8 @@ function testDoPostTelegramWebhook() {
   const mockSheets = createMockSheets();
   initializeSheets = () => mockSheets;
   
-  const originalPropertiesService = global.PropertiesService;
-  global.PropertiesService = {
+  const originalPropertiesService = this.PropertiesService;
+  this.PropertiesService = {
     getScriptProperties: () => ({
       getProperty: (k) => {
         if (k === 'WEBHOOK_TOKEN') return 'secret_123';
@@ -450,8 +450,8 @@ function testDoPostTelegramWebhook() {
   let fetchCalled = false;
   let fetchUrl = "";
   let fetchOptions = null;
-  const originalUrlFetchApp = global.UrlFetchApp;
-  global.UrlFetchApp = {
+  const originalUrlFetchApp = this.UrlFetchApp;
+  this.UrlFetchApp = {
     fetch: (url, options) => {
       fetchCalled = true;
       fetchUrl = url;
@@ -533,11 +533,11 @@ function testDoPostTelegramWebhook() {
     
   } finally {
     initializeSheets = originalInitSheets;
-    global.PropertiesService = originalPropertiesService;
+    this.PropertiesService = originalPropertiesService;
     if (originalUrlFetchApp) {
-      global.UrlFetchApp = originalUrlFetchApp;
+      this.UrlFetchApp = originalUrlFetchApp;
     } else {
-      delete global.UrlFetchApp;
+      delete this.UrlFetchApp;
     }
   }
 }
@@ -549,8 +549,8 @@ function testCheckMaturityAndSendAlerts() {
   const mockSheets = createMockSheets();
   initializeSheets = () => mockSheets;
   
-  const originalPropertiesService = global.PropertiesService;
-  global.PropertiesService = {
+  const originalPropertiesService = this.PropertiesService;
+  this.PropertiesService = {
     getScriptProperties: () => ({
       getProperty: (k) => {
         if (k === 'TELEGRAM_BOT_TOKEN') return 'bot_token_abc';
@@ -560,8 +560,8 @@ function testCheckMaturityAndSendAlerts() {
   };
   
   const sentPayloads = [];
-  const originalUrlFetchApp = global.UrlFetchApp;
-  global.UrlFetchApp = {
+  const originalUrlFetchApp = this.UrlFetchApp;
+  this.UrlFetchApp = {
     fetch: (url, options) => {
       sentPayloads.push({
         url: url,
@@ -619,11 +619,11 @@ function testCheckMaturityAndSendAlerts() {
     
   } finally {
     initializeSheets = originalInitSheets;
-    global.PropertiesService = originalPropertiesService;
+    this.PropertiesService = originalPropertiesService;
     if (originalUrlFetchApp) {
-      global.UrlFetchApp = originalUrlFetchApp;
+      this.UrlFetchApp = originalUrlFetchApp;
     } else {
-      delete global.UrlFetchApp;
+      delete this.UrlFetchApp;
     }
   }
 }
