@@ -285,11 +285,12 @@ function executeAddDeposit(sheets, payload) {
     usernameBankcode
   ];
   
-  sheets.deposits.appendRow(newRow);
-  
-  // Force plain text format cho cột created_at (6) và maturity_at (7)
-  const newLastRow = sheets.deposits.getLastRow();
+  // Ghi data: set format plain text TRƯỚC rồi mới ghi giá trị
+  const newLastRow = sheets.deposits.getLastRow() + 1;
+  const newRange = sheets.deposits.getRange(newLastRow, 1, 1, 8);
+  // Format cột 6,7 (created_at, maturity_at) là plain text trước
   sheets.deposits.getRange(newLastRow, 6, 1, 2).setNumberFormat('@');
+  newRange.setValues([newRow]);
   
   return buildJsonResponse("success", {
     id: depositId,
@@ -524,11 +525,11 @@ function executeRolloverDeposit(sheets, payload) {
     oldDepositData.user_bankcode
   ];
   
-  depositsSheet.appendRow(newRow);
-  
-  // Force plain text format cho cột created_at (6) và maturity_at (7)
-  const newLastRow = depositsSheet.getLastRow();
+  // Ghi data: set format plain text TRƯỚC rồi mới ghi giá trị
+  const newLastRow = depositsSheet.getLastRow() + 1;
+  const newRange = depositsSheet.getRange(newLastRow, 1, 1, 8);
   depositsSheet.getRange(newLastRow, 6, 1, 2).setNumberFormat('@');
+  newRange.setValues([newRow]);
   
   return buildJsonResponse("success", {
     old_deposit: {
