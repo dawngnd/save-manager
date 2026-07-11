@@ -12,4 +12,5 @@ export interface Deposit {
   created_at: string; // format: DD/MM/YYYY
   maturity_at: string; // format: DD/MM/YYYY
   user_bankcode: string;
+  parent_id: string; // ID khoản gốc (trống nếu là khoản đầu tiên)
 }

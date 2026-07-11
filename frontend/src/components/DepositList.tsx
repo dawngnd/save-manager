@@ -36,6 +36,36 @@ export const DepositList: React.FC<DepositListProps> = ({ deposits, onTriggerRol
     }
   };
 
+  /**
+   * Truy vết chuỗi tái tục: đi ngược về gốc rồi đi xuôi về cuối
+   */
+  const getRolloverChain = (deposit: Deposit): Deposit[] => {
+    // Tìm gốc (khoản không có parent_id)
+    let origin = deposit;
+    const visited = new Set<string>();
+    while (origin.parent_id && !visited.has(origin.parent_id)) {
+      visited.add(origin.id);
+      const parent = deposits.find(d => d.id === origin.parent_id);
+      if (!parent) break;
+      origin = parent;
+    }
+
+    // Đi xuôi từ gốc: tìm tất cả con cháu
+    const chain: Deposit[] = [origin];
+    let current = origin;
+    const usedIds = new Set<string>([origin.id]);
+    
+    while (true) {
+      const child = deposits.find(d => d.parent_id === current.id && !usedIds.has(d.id));
+      if (!child) break;
+      chain.push(child);
+      usedIds.add(child.id);
+      current = child;
+    }
+
+    return chain;
+  };
+
   // Filter and sort deposits
   const getActionRequiredDeposits = (items: Deposit[]) => {
     const today = new Date();
@@ -47,7 +77,7 @@ export const DepositList: React.FC<DepositListProps> = ({ deposits, onTriggerRol
       .filter((item) => {
         try {
           const diffDays = calculateDaysBetween(todayStr, item.maturity_at);
-          return diffDays <= 3; // Overdue (< 0) or <= 3 days remaining
+          return diffDays <= 3;
         } catch {
           return false;
         }
@@ -64,6 +94,7 @@ export const DepositList: React.FC<DepositListProps> = ({ deposits, onTriggerRol
   };
 
   const filteredDeposits = getActionRequiredDeposits(deposits);
+  const rolloverChain = selectedDeposit ? getRolloverChain(selectedDeposit) : [];
 
   return (
     <div className="space-y-4">
@@ -131,14 +162,63 @@ export const DepositList: React.FC<DepositListProps> = ({ deposits, onTriggerRol
               <div className="flex justify-between pb-1">
                 <span className="text-[#708499]">Trạng thái:</span>
                 <span className={`px-2 py-0.5 text-xs font-semibold rounded-md border ${
-                  selectedDeposit.status === 'matured' 
-                    ? 'bg-[#ff9f1a]/10 text-[#ff9f1a] border-[#ff9f1a]/20' 
-                    : 'bg-emerald-400/10 text-emerald-400 border-emerald-400/20'
+                  selectedDeposit.status === 'rolled_over'
+                    ? 'bg-[#708499]/10 text-[#708499] border-[#708499]/20'
+                    : selectedDeposit.status === 'matured' 
+                      ? 'bg-[#ff9f1a]/10 text-[#ff9f1a] border-[#ff9f1a]/20' 
+                      : 'bg-emerald-400/10 text-emerald-400 border-emerald-400/20'
                 }`}>
-                  {selectedDeposit.status === 'active' ? 'Đang hoạt động' : 'Đã đáo hạn'}
+                  {selectedDeposit.status === 'active' ? 'Đang hoạt động' : selectedDeposit.status === 'rolled_over' ? 'Đã tái tục' : 'Đã đáo hạn'}
                 </span>
               </div>
             </div>
+
+            {/* Rollover Lineage Chain */}
+            {rolloverChain.length > 1 && (
+              <div className="bg-[#17212b] border border-[#2c3847] rounded-xl p-4 space-y-3">
+                <div className="text-xs text-[#708499] font-semibold uppercase tracking-wider">
+                  🔗 Lịch sử tái tục ({rolloverChain.length} kỳ)
+                </div>
+                <div className="relative pl-5 space-y-0">
+                  {rolloverChain.map((dep, idx) => {
+                    const isSelected = dep.id === selectedDeposit.id;
+                    const isLast = idx === rolloverChain.length - 1;
+                    return (
+                      <div key={dep.id} className="relative">
+                        {/* Vertical line */}
+                        {!isLast && (
+                          <div className="absolute left-[-12px] top-5 w-[2px] h-full bg-[#2c3847]" />
+                        )}
+                        {/* Dot */}
+                        <div className={`absolute left-[-16px] top-1.5 w-[10px] h-[10px] rounded-full border-2 ${
+                          isSelected
+                            ? 'bg-[#64b5f6] border-[#64b5f6]'
+                            : dep.status === 'rolled_over'
+                              ? 'bg-[#2c3847] border-[#708499]'
+                              : 'bg-emerald-400 border-emerald-400'
+                        }`} />
+                        {/* Content */}
+                        <button
+                          type="button"
+                          onClick={() => setSelectedDeposit(dep)}
+                          className={`w-full text-left pb-4 pl-1 transition cursor-pointer ${
+                            isSelected ? 'opacity-100' : 'opacity-60 hover:opacity-90'
+                          }`}
+                        >
+                          <div className="text-xs font-semibold text-[#f5f5f5]">
+                            Kỳ {idx + 1}: {formatCurrency(dep.amount)}
+                            {idx === 0 && <span className="text-[#708499] ml-1">(gốc)</span>}
+                          </div>
+                          <div className="text-[10px] text-[#708499]">
+                            {dep.created_at} → {dep.maturity_at} · {dep.interest_rate}%
+                          </div>
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
             
             <div className="flex gap-3">
               <button

@@ -219,7 +219,7 @@ function executeGetDeposits(sheets, payload) {
   const result = [];
   
   if (lastRow > 1) {
-    const values = depositsSheet.getRange(2, 1, lastRow - 1, 8).getValues();
+    const values = depositsSheet.getRange(2, 1, lastRow - 1, 9).getValues();
     for (let i = 0; i < values.length; i++) {
       result.push({
         id: values[i][0],
@@ -229,7 +229,8 @@ function executeGetDeposits(sheets, payload) {
         expected_interest: Number(values[i][4]),
         created_at: values[i][5],
         maturity_at: values[i][6],
-        user_bankcode: values[i][7]
+        user_bankcode: values[i][7],
+        parent_id: values[i][8] || ''
       });
     }
   }
@@ -282,12 +283,13 @@ function executeAddDeposit(sheets, payload) {
     expectedInterest,
     data.created_at,
     data.maturity_at,
-    usernameBankcode
+    usernameBankcode,
+    "" // parent_id: khoản gốc không có parent
   ];
   
   // Ghi data: set format plain text TRƯỚC rồi mới ghi giá trị
   const newLastRow = sheets.deposits.getLastRow() + 1;
-  const newRange = sheets.deposits.getRange(newLastRow, 1, 1, 8);
+  const newRange = sheets.deposits.getRange(newLastRow, 1, 1, 9);
   // Format cột 6,7 (created_at, maturity_at) là plain text trước
   sheets.deposits.getRange(newLastRow, 6, 1, 2).setNumberFormat('@');
   newRange.setValues([newRow]);
@@ -300,7 +302,8 @@ function executeAddDeposit(sheets, payload) {
     expected_interest: expectedInterest,
     created_at: data.created_at,
     maturity_at: data.maturity_at,
-    user_bankcode: usernameBankcode
+    user_bankcode: usernameBankcode,
+    parent_id: ""
   });
 }
 
@@ -522,12 +525,13 @@ function executeRolloverDeposit(sheets, payload) {
     newExpectedInterest,
     createdAt,
     maturityAt,
-    oldDepositData.user_bankcode
+    oldDepositData.user_bankcode,
+    oldDepositId // parent_id: trỏ về khoản cũ được tái tục
   ];
   
   // Ghi data: set format plain text TRƯỚC rồi mới ghi giá trị
   const newLastRow = depositsSheet.getLastRow() + 1;
-  const newRange = depositsSheet.getRange(newLastRow, 1, 1, 8);
+  const newRange = depositsSheet.getRange(newLastRow, 1, 1, 9);
   depositsSheet.getRange(newLastRow, 6, 1, 2).setNumberFormat('@');
   newRange.setValues([newRow]);
   
@@ -544,7 +548,8 @@ function executeRolloverDeposit(sheets, payload) {
       expected_interest: newExpectedInterest,
       created_at: createdAt,
       maturity_at: maturityAt,
-      user_bankcode: oldDepositData.user_bankcode
+      user_bankcode: oldDepositData.user_bankcode,
+      parent_id: oldDepositId
     }
   });
 }
