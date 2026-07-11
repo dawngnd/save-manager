@@ -100,6 +100,7 @@ function doPost(e) {
     }
     
     const payload = JSON.parse(e.postData.contents);
+    console.log("doPost received action: " + (payload.action || "telegram_webhook"));
     
     // Kiểm tra xem yêu cầu đến từ Telegram hay không
     const isTelegramWebhook = payload.message || payload.callback_query;
@@ -110,7 +111,7 @@ function doPost(e) {
       const requestToken = e.parameter && e.parameter.token;
       
       if (!webhookToken || requestToken !== webhookToken) {
-        Logger.log("Cảnh báo: Webhook request không có token hợp lệ.");
+        console.log("Webhook request không có token hợp lệ.");
         return buildJsonResponse("error", "Unauthorized access.");
       }
       return handleTelegramWebhook(payload);
@@ -122,7 +123,10 @@ function doPost(e) {
     const properties = typeof PropertiesService !== 'undefined' ? PropertiesService.getScriptProperties() : null;
     const botToken = properties ? properties.getProperty("TELEGRAM_BOT_TOKEN") : null;
     
+    console.log("Verify initData: length=" + (initData ? initData.length : 0) + ", botToken=" + (botToken ? "SET" : "MISSING"));
+    
     if (!verifyTelegramWebAppData(initData, botToken)) {
+      console.log("Xác thực thất bại. initData snippet: " + (initData ? initData.substring(0, 100) : "null"));
       return buildJsonResponse("error", "Xác thực Telegram Web App thất bại.");
     }
     
@@ -805,7 +809,7 @@ function verifyTelegramWebAppData(initData, botToken) {
 
     const hash = params['hash'];
     if (!hash) {
-      Logger.log("Verify failed: không tìm thấy hash trong initData");
+      console.log("Verify failed: không tìm thấy hash trong initData");
       return false;
     }
 
@@ -813,7 +817,7 @@ function verifyTelegramWebAppData(initData, botToken) {
     const authDate = parseInt(params['auth_date'], 10);
     const currentTime = Math.floor(Date.now() / 1000);
     if (isNaN(authDate) || (currentTime - authDate) > 86400) {
-      Logger.log("Verify failed: auth_date quá hạn. auth_date=" + authDate + ", currentTime=" + currentTime + ", diff=" + (currentTime - authDate) + "s");
+      console.log("Verify failed: auth_date quá hạn. auth_date=" + authDate + ", currentTime=" + currentTime + ", diff=" + (currentTime - authDate) + "s");
       return false;
     }
 
@@ -841,11 +845,11 @@ function verifyTelegramWebAppData(initData, botToken) {
     }).join('');
 
     if (signatureHex !== hash) {
-      Logger.log("Verify failed: HMAC mismatch. expected=" + hash.substring(0, 16) + "... got=" + signatureHex.substring(0, 16) + "...");
+      console.log("Verify failed: HMAC mismatch. expected=" + hash.substring(0, 16) + "... got=" + signatureHex.substring(0, 16) + "...");
     }
     return signatureHex === hash;
   } catch (err) {
-    Logger.log("Lỗi trong verifyTelegramWebAppData: " + err.toString());
+    console.log("Lỗi trong verifyTelegramWebAppData: " + err.toString());
     return false;
   }
 }
