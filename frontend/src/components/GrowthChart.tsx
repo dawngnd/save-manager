@@ -257,6 +257,9 @@ export function generateStepWiseGrowthData(deposits: Deposit[]): ChartDataPoint[
 
   if (!minDate || !maxDate) return [];
 
+  const startDate: Date = minDate;
+  const endDate: Date = maxDate;
+
   // Tính tổng tại thời điểm T
   const computeTotalAt = (targetDate: Date): { principal: number; interest: number } => {
     let principal = 0;
@@ -289,11 +292,10 @@ export function generateStepWiseGrowthData(deposits: Deposit[]): ChartDataPoint[
 
   // Tạo data points theo bước 1 tháng
   const dataPoints: ChartDataPoint[] = [];
-  const cursor = new Date(minDate);
-  cursor.setDate(1); // Đầu tháng
+  const cursor = new Date(startDate);
+  cursor.setDate(1);
 
-  while (cursor <= maxDate) {
-    const dd = String(cursor.getDate()).padStart(2, '0');
+  while (cursor <= endDate) {
     const mm = String(cursor.getMonth() + 1).padStart(2, '0');
     const yyyy = cursor.getFullYear();
     const dateStr = `${mm}/${yyyy}`;
@@ -312,14 +314,14 @@ export function generateStepWiseGrowthData(deposits: Deposit[]): ChartDataPoint[
 
   // Thêm điểm cuối cùng (ngày đáo hạn chính xác) nếu chưa có
   const lastPoint = dataPoints[dataPoints.length - 1];
-  const { principal: endP, interest: endI } = computeTotalAt(maxDate);
+  const { principal: endP, interest: endI } = computeTotalAt(endDate);
   const endTotal = endP + endI;
   if (!lastPoint || lastPoint.total !== endTotal) {
-    const dd = String(maxDate.getDate()).padStart(2, '0');
-    const mm = String(maxDate.getMonth() + 1).padStart(2, '0');
-    const yyyy = maxDate.getFullYear();
+    const edd = String(endDate.getDate()).padStart(2, '0');
+    const emm = String(endDate.getMonth() + 1).padStart(2, '0');
+    const eyyyy = endDate.getFullYear();
     dataPoints.push({
-      date: `${dd}/${mm}/${yyyy}`,
+      date: `${edd}/${emm}/${eyyyy}`,
       total: endTotal,
       principal: endP,
       interest: endI
