@@ -16,6 +16,14 @@ export const DepositList: React.FC<DepositListProps> = ({ deposits, onTriggerRol
     return value.toLocaleString('vi-VN') + ' ₫';
   };
 
+  /** Lãi thực tế = amount hiện tại - amount parent */
+  const getActualInterest = (deposit: Deposit): number | null => {
+    if (!deposit.parent_id) return null;
+    const parent = deposits.find(d => d.id === deposit.parent_id);
+    if (!parent) return null;
+    return deposit.amount - parent.amount;
+  };
+
   const getDaysCount = (start: string, end: string) => {
     try {
       return calculateDaysBetween(start, end);
@@ -133,6 +141,7 @@ export const DepositList: React.FC<DepositListProps> = ({ deposits, onTriggerRol
             <DepositCard
               key={deposit.id}
               deposit={deposit}
+              actualInterest={getActualInterest(deposit)}
               onClick={() => setSelectedDeposit(deposit)}
             />
           ))}
@@ -168,6 +177,17 @@ export const DepositList: React.FC<DepositListProps> = ({ deposits, onTriggerRol
                 <span className="text-[#708499]">Lãi dự kiến:</span>
                 <span className="text-emerald-400 font-bold">{formatCurrency(selectedDeposit.expected_interest)}</span>
               </div>
+              {(() => {
+                const ai = getActualInterest(selectedDeposit);
+                return ai != null ? (
+                  <div className="flex justify-between border-b border-[#2c3847]/40 pb-2">
+                    <span className="text-[#708499]">Lãi thực tế:</span>
+                    <span className={`font-bold ${ai >= 0 ? 'text-emerald-400' : 'text-[#ff4d4d]'}`}>
+                      {ai >= 0 ? '+' : ''}{formatCurrency(ai)}
+                    </span>
+                  </div>
+                ) : null;
+              })()}
               <div className="flex justify-between border-b border-[#2c3847]/40 pb-2">
                 <span className="text-[#708499]">Ngày gửi:</span>
                 <span className="text-[#f5f5f5]">{selectedDeposit.created_at}</span>
@@ -229,6 +249,14 @@ export const DepositList: React.FC<DepositListProps> = ({ deposits, onTriggerRol
                           <div className="text-xs font-semibold text-[#f5f5f5]">
                             Kỳ {idx + 1}: {formatCurrency(dep.amount)}
                             {idx === 0 && <span className="text-[#708499] ml-1">(gốc)</span>}
+                            {idx > 0 && (() => {
+                              const ai = getActualInterest(dep);
+                              return ai != null ? (
+                                <span className={`ml-1 ${ai >= 0 ? 'text-emerald-400' : 'text-[#ff4d4d]'}`}>
+                                  ({ai >= 0 ? '+' : ''}{ai.toLocaleString('vi-VN')} ₫)
+                                </span>
+                              ) : null;
+                            })()}
                           </div>
                           <div className="text-[10px] text-[#708499]">
                             {dep.created_at} → {dep.maturity_at} · {dep.interest_rate}%

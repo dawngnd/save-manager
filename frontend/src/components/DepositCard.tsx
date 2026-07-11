@@ -4,10 +4,11 @@ import { calculateDaysBetween } from '../utils/interest';
 
 interface DepositCardProps {
   deposit: Deposit;
+  actualInterest?: number | null; // amount - parent amount
   onClick: () => void;
 }
 
-export const DepositCard: React.FC<DepositCardProps> = ({ deposit, onClick }) => {
+export const DepositCard: React.FC<DepositCardProps> = ({ deposit, actualInterest, onClick }) => {
   const formatCurrency = (value: number) => {
     return value.toLocaleString('vi-VN') + ' ₫';
   };
@@ -16,7 +17,6 @@ export const DepositCard: React.FC<DepositCardProps> = ({ deposit, onClick }) =>
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
-  // Format current date as DD/MM/YYYY for helper
   const todayStr = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
   
   let diffDays = 0;
@@ -49,6 +49,11 @@ export const DepositCard: React.FC<DepositCardProps> = ({ deposit, onClick }) =>
         <div className="space-y-1">
           <div className="text-xs text-[#708499] font-medium uppercase tracking-wider">{deposit.user_bankcode}</div>
           <div className="text-lg font-bold text-[#f5f5f5]">{formatCurrency(deposit.amount)}</div>
+          {actualInterest != null && (
+            <div className={`text-xs font-semibold ${actualInterest >= 0 ? 'text-emerald-400' : 'text-[#ff4d4d]'}`}>
+              {actualInterest >= 0 ? '+' : ''}{formatCurrency(actualInterest)} lãi thực
+            </div>
+          )}
         </div>
         <div className={`px-2.5 py-1 text-xs font-semibold rounded-lg border ${statusColorClass}`}>
           {statusText}
