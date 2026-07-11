@@ -121,12 +121,21 @@ function doPost(e) {
     const initData = payload.initData;
     
     const properties = typeof PropertiesService !== 'undefined' ? PropertiesService.getScriptProperties() : null;
-    const botToken = properties ? properties.getProperty("TELEGRAM_BOT_TOKEN") : null;
     
-    const verifyResult = verifyTelegramWebAppData(initData, botToken);
-    if (verifyResult !== "") {
-      // DEBUG: Tạm thời trả về lý do verify thất bại để debug
-      return buildJsonResponse("error", "Xác thực thất bại: " + verifyResult);
+    // Xác thực: Worker gửi kèm server secret → tin tưởng (đã verify ở Worker)
+    // Nếu không có secret → fallback verify initData trực tiếp (test/direct call)
+    const serverSecret = payload._serverSecret;
+    const expectedSecret = properties ? properties.getProperty("WORKER_SECRET") : null;
+    
+    if (serverSecret && expectedSecret && serverSecret === expectedSecret) {
+      // Đã xác thực bởi Cloudflare Worker — cho phép đi tiếp
+    } else {
+      // Fallback: verify initData trực tiếp (cho unit test, mock, direct API call)
+      const botToken = properties ? properties.getProperty("TELEGRAM_BOT_TOKEN") : null;
+      const verifyResult = verifyTelegramWebAppData(initData, botToken);
+      if (verifyResult !== "") {
+        return buildJsonResponse("error", "Xác thực thất bại: " + verifyResult);
+      }
     }
     
     // Yêu cầu chỉ đọc: Không sử dụng LockService để tránh nghẽn luồng đọc
