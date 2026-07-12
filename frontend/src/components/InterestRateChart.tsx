@@ -45,11 +45,6 @@ function parseToMonth(dateStr: string): { key: string; date: Date } | null {
   }
 }
 
-interface MonthlyRate {
-  month: string; // MM/YYYY
-  rates: number[]; // all interest_rate values in this month for a bank
-}
-
 export const InterestRateChart: React.FC<InterestRateChartProps> = ({ deposits }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const chartInstanceRef = useRef<Chart | null>(null);
@@ -196,7 +191,7 @@ export const InterestRateChart: React.FC<InterestRateChartProps> = ({ deposits }
             callbacks: {
               label: function (context) {
                 const val = context.parsed.y;
-                if (isNaN(val)) return '';
+                if (val === null || isNaN(val)) return '';
                 return `${context.dataset.label}: ${val}%`;
               },
             },
