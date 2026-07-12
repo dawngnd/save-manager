@@ -3,6 +3,7 @@ import { DepositList } from './DepositList';
 import { DepositForm } from './DepositForm';
 import { RolloverForm } from './RolloverForm';
 import { GrowthChart } from './GrowthChart';
+import { BankSummaryChart } from './BankSummaryChart';
 import { retrieveLaunchParams } from '@telegram-apps/sdk';
 import { Deposit } from '../types';
 import { useDepositsCache } from '../hooks/useDepositsCache';
@@ -13,6 +14,7 @@ export const App: React.FC = () => {
   const [isRolloverOpen, setIsRolloverOpen] = useState<boolean>(false);
   const [rolloverDeposit, setRolloverDeposit] = useState<Deposit | null>(null);
   const [showChart, setShowChart] = useState<boolean>(false);
+  const [showBankSummary, setShowBankSummary] = useState<boolean>(false);
 
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
@@ -60,15 +62,24 @@ export const App: React.FC = () => {
             </button>
             <button
               onClick={() => setShowChart(!showChart)}
-              className="px-3.5 py-2 bg-[#2c3847] hover:bg-[#5288c1]/20 hover:text-[#64b5f6] text-xs font-semibold rounded-xl transition duration-150 cursor-pointer"
+              className={`px-3.5 py-2 text-xs font-semibold rounded-xl transition duration-150 cursor-pointer ${showChart ? 'bg-[#5288c1]/20 text-[#64b5f6]' : 'bg-[#2c3847] hover:bg-[#5288c1]/20 hover:text-[#64b5f6]'}`}
             >
-              {showChart ? '📋 Danh sách' : '📊 Biểu đồ'}
+              📈
+            </button>
+            <button
+              onClick={() => setShowBankSummary(!showBankSummary)}
+              className={`px-3.5 py-2 text-xs font-semibold rounded-xl transition duration-150 cursor-pointer ${showBankSummary ? 'bg-[#4caf50]/20 text-[#4caf50]' : 'bg-[#2c3847] hover:bg-[#4caf50]/20 hover:text-[#4caf50]'}`}
+            >
+              🏦
             </button>
           </div>
         </div>
 
         {/* Biểu đồ tăng trưởng */}
         {showChart && <GrowthChart deposits={deposits} />}
+
+        {/* Tổng hợp theo tài khoản */}
+        {showBankSummary && <BankSummaryChart deposits={deposits} />}
 
         {/* Deposit List Panel */}
         <div className="bg-[#0e1621] border border-[#2b394a] rounded-2xl p-5 shadow-2xl space-y-4">

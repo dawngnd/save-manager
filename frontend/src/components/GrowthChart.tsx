@@ -201,9 +201,11 @@ export const GrowthChart: React.FC<GrowthChartProps> = ({ deposits }) => {
     );
   }
 
-  const currentTotal = data[0].total;
+  const currentPrincipal = deposits
+    .filter(d => d.status === 'active')
+    .reduce((sum, d) => sum + d.amount, 0);
   const peakTotal = data[data.length - 1].total;
-  const totalInterestEarned = peakTotal - data[0].principal;
+  const totalInterestEarned = peakTotal - currentPrincipal;
 
   return (
     <div className="bg-[#0e1621] border border-[#2b394a] rounded-2xl p-4 shadow-2xl space-y-3">
@@ -226,8 +228,8 @@ export const GrowthChart: React.FC<GrowthChartProps> = ({ deposits }) => {
           {/* Summary */}
           <div className="grid grid-cols-2 gap-3 text-xs border-b border-[#2b394a]/50 pb-2">
             <div>
-              <div className="text-[#708499]">Khởi đầu</div>
-              <div className="font-bold text-[#f5f5f5]">{currentTotal.toLocaleString('vi-VN')} ₫</div>
+              <div className="text-[#708499]">Hiện tại</div>
+              <div className="font-bold text-[#f5f5f5]">{currentPrincipal.toLocaleString('vi-VN')} ₫</div>
             </div>
             <div>
               <div className="text-[#708499]">Dự phóng đỉnh</div>
