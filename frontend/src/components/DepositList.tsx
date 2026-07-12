@@ -16,12 +16,12 @@ export const DepositList: React.FC<DepositListProps> = ({ deposits, onTriggerRol
     return value.toLocaleString('vi-VN') + ' ₫';
   };
 
-  /** Lãi thực tế = amount hiện tại - amount parent */
+  /** Lãi thực tế = child amount - amount hiện tại. Không có child_id → 0 */
   const getActualInterest = (deposit: Deposit): number | null => {
-    if (!deposit.parent_id) return null;
-    const parent = deposits.find(d => d.id === deposit.parent_id);
-    if (!parent) return null;
-    return deposit.amount - parent.amount;
+    if (!deposit.child_id) return 0;
+    const child = deposits.find(d => d.id === deposit.child_id);
+    if (!child) return 0;
+    return child.amount - deposit.amount;
   };
 
   const getDaysCount = (start: string, end: string) => {
@@ -88,9 +88,9 @@ export const DepositList: React.FC<DepositListProps> = ({ deposits, onTriggerRol
     return d.status;
   };
 
-  /** Kiểm tra khoản này đã bị tái tục chưa (có child trỏ đến nó) */
+  /** Kiểm tra khoản này đã bị tái tục chưa (có child_id) */
   const hasChild = (deposit: Deposit): boolean => {
-    return deposits.some(d => d.parent_id === deposit.id);
+    return !!deposit.child_id;
   };
 
   // Danh sách banks theo status hiện tại

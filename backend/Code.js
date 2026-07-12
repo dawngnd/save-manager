@@ -45,7 +45,9 @@ function initializeSheets() {
     'expected_interest',
     'created_at',
     'maturity_at',
-    'user_bankcode'
+    'user_bankcode',
+    'parent_id',
+    'child_id'
   ];
   if (depositsSheet.getLastRow() === 0 || isHeaderEmpty(depositsSheet, depositsHeaders.length)) {
     depositsSheet.getRange(1, 1, 1, depositsHeaders.length).setValues([depositsHeaders]);
@@ -58,6 +60,46 @@ function initializeSheets() {
   };
 }
 
+/**
+ * Migration: Backfill cột child_id dựa trên parent_id đã tồn tại.
+ * Với mỗi bản ghi có parent_id, tìm bản ghi cha và ghi child_id = id bản ghi con.
+ * Chạy MỘT LẦN bằng tay từ Apps Script Editor.
+ */
+function migrateChildId() {
+  const sheets = initializeSheets();
+  const depositsSheet = sheets.deposits;
+  const lastRow = depositsSheet.getLastRow();
+  
+  if (lastRow <= 1) {
+    Logger.log("Không có dữ liệu để migrate.");
+    return;
+  }
+  
+  const values = depositsSheet.getRange(2, 1, lastRow - 1, 10).getValues();
+  
+  // Tạo map id → row index (1-based, offset header)
+  const idToRow = {};
+  for (let i = 0; i < values.length; i++) {
+    idToRow[values[i][0]] = i + 2; // row trong sheet
+  }
+  
+  let migratedCount = 0;
+  
+  for (let i = 0; i < values.length; i++) {
+    const parentId = values[i][8]; // cột parent_id (index 8)
+    const myId = values[i][0];     // cột id (index 0)
+    
+    if (parentId && idToRow[parentId]) {
+      const parentRow = idToRow[parentId];
+      // Ghi child_id (cột 10) cho bản ghi cha
+      depositsSheet.getRange(parentRow, 10, 1, 1).setValue(myId);
+      migratedCount++;
+      Logger.log("Migrated: parent " + parentId + " → child_id = " + myId);
+    }
+  }
+  
+  Logger.log("Migration hoàn tất. Đã cập nhật " + migratedCount + " bản ghi.");
+}
 /**
  * Kiểm tra xem hàng đầu tiên (header) của sheet có trống hay không.
  * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet
@@ -219,7 +261,7 @@ function executeGetDeposits(sheets, payload) {
   const result = [];
   
   if (lastRow > 1) {
-    const values = depositsSheet.getRange(2, 1, lastRow - 1, 9).getValues();
+    const values = depositsSheet.getRange(2, 1, lastRow - 1, 10).getValues();
     for (let i = 0; i < values.length; i++) {
       result.push({
         id: values[i][0],
@@ -230,7 +272,8 @@ function executeGetDeposits(sheets, payload) {
         created_at: values[i][5],
         maturity_at: values[i][6],
         user_bankcode: values[i][7],
-        parent_id: values[i][8] || ''
+        parent_id: values[i][8] || '',
+        child_id: values[i][9] || ''
       });
     }
   }
@@ -284,13 +327,12 @@ function executeAddDeposit(sheets, payload) {
     data.created_at,
     data.maturity_at,
     usernameBankcode,
-    "" // parent_id: khoản gốc không có parent
+    "", // parent_id
+    ""  // child_id
   ];
   
-  // Ghi data: set format plain text TRƯỚC rồi mới ghi giá trị
   const newLastRow = sheets.deposits.getLastRow() + 1;
-  const newRange = sheets.deposits.getRange(newLastRow, 1, 1, 9);
-  // Format cột 6,7 (created_at, maturity_at) là plain text trước
+  const newRange = sheets.deposits.getRange(newLastRow, 1, 1, 10);
   sheets.deposits.getRange(newLastRow, 6, 1, 2).setNumberFormat('@');
   newRange.setValues([newRow]);
   
@@ -303,7 +345,8 @@ function executeAddDeposit(sheets, payload) {
     created_at: data.created_at,
     maturity_at: data.maturity_at,
     user_bankcode: usernameBankcode,
-    parent_id: ""
+    parent_id: "",
+    child_id: ""
   });
 }
 
@@ -507,7 +550,7 @@ function executeRolloverDeposit(sheets, payload) {
     throw new Error("Khoản gửi cũ không ở trạng thái hoạt động (active), không thể tái tục.");
   }
   
-  // Cập nhật trạng thái khoản cũ thành 'rolled_over' (Cột status là cột thứ 4)
+  // Cập nhật trạng thái khoản cũ thành 'rolled_over' và gán child_id
   depositsSheet.getRange(oldDepositRowIndex, 4, 1, 1).setValue("rolled_over");
   
   // Tạo khoản mới
@@ -516,6 +559,9 @@ function executeRolloverDeposit(sheets, payload) {
   
   const randomStr = Math.random().toString(36).substring(2, 8);
   const newDepositId = "dep-" + Date.now() + "-" + randomStr;
+  
+  // Gán child_id cho bản ghi cha (cột 10)
+  depositsSheet.getRange(oldDepositRowIndex, 10, 1, 1).setValue(newDepositId);
   
   const newRow = [
     newDepositId,
@@ -526,19 +572,20 @@ function executeRolloverDeposit(sheets, payload) {
     createdAt,
     maturityAt,
     oldDepositData.user_bankcode,
-    oldDepositId // parent_id: trỏ về khoản cũ được tái tục
+    oldDepositId, // parent_id
+    ""            // child_id (chưa có)
   ];
   
-  // Ghi data: set format plain text TRƯỚC rồi mới ghi giá trị
   const newLastRow = depositsSheet.getLastRow() + 1;
-  const newRange = depositsSheet.getRange(newLastRow, 1, 1, 9);
+  const newRange = depositsSheet.getRange(newLastRow, 1, 1, 10);
   depositsSheet.getRange(newLastRow, 6, 1, 2).setNumberFormat('@');
   newRange.setValues([newRow]);
   
   return buildJsonResponse("success", {
     old_deposit: {
       id: oldDepositId,
-      status: "rolled_over"
+      status: "rolled_over",
+      child_id: newDepositId
     },
     new_deposit: {
       id: newDepositId,
@@ -549,7 +596,8 @@ function executeRolloverDeposit(sheets, payload) {
       created_at: createdAt,
       maturity_at: maturityAt,
       user_bankcode: oldDepositData.user_bankcode,
-      parent_id: oldDepositId
+      parent_id: oldDepositId,
+      child_id: ""
     }
   });
 }
