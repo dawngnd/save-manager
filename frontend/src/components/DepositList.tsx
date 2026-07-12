@@ -77,12 +77,24 @@ export const DepositList: React.FC<DepositListProps> = ({ deposits, onTriggerRol
   // Filter and sort deposits
   type StatusFilter = 'active' | 'matured' | 'rolled_over' | 'all';
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('active');
+  const [bankFilter, setBankFilter] = useState<string>('all');
+
+  // Danh sách banks theo status hiện tại
+  const banksInCurrentStatus = Array.from(
+    new Set(
+      deposits
+        .filter(d => statusFilter === 'all' || d.status === statusFilter)
+        .map(d => d.user_bankcode)
+        .filter(Boolean)
+    )
+  ).sort();
 
   const getFilteredDeposits = (items: Deposit[]) => {
     return items
       .filter((item) => {
-        if (statusFilter === 'all') return true;
-        return item.status === statusFilter;
+        if (statusFilter !== 'all' && item.status !== statusFilter) return false;
+        if (bankFilter !== 'all' && item.user_bankcode !== bankFilter) return false;
+        return true;
       })
       .sort((a, b) => {
         try {
@@ -114,7 +126,7 @@ export const DepositList: React.FC<DepositListProps> = ({ deposits, onTriggerRol
           return (
             <button
               key={key}
-              onClick={() => setStatusFilter(key)}
+              onClick={() => { setStatusFilter(key); setBankFilter('all'); }}
               className={`px-3 py-1.5 text-xs font-semibold rounded-lg border whitespace-nowrap transition cursor-pointer ${
                 statusFilter === key
                   ? 'bg-[#5288c1]/20 text-[#64b5f6] border-[#5288c1]/40'
@@ -126,6 +138,29 @@ export const DepositList: React.FC<DepositListProps> = ({ deposits, onTriggerRol
           );
         })}
       </div>
+
+      {/* Bank Filter */}
+      {banksInCurrentStatus.length > 1 && (
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] text-[#708499] whitespace-nowrap">🏦</span>
+          <select
+            value={bankFilter}
+            onChange={(e) => setBankFilter(e.target.value)}
+            className="flex-1 px-3 py-1.5 text-xs font-semibold bg-[#17212b] text-[#f5f5f5] border border-[#2c3847] rounded-lg focus:border-[#5288c1]/40 outline-none cursor-pointer appearance-none"
+            style={{ backgroundImage: 'url("data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%23708499\'%3e%3cpath d=\'M7 10l5 5 5-5z\'/%3e%3c/svg%3e")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center', backgroundSize: '16px', paddingRight: '28px' }}
+          >
+            <option value="all">Tất cả tài khoản ({banksInCurrentStatus.length})</option>
+            {banksInCurrentStatus.map(bank => {
+              const count = deposits.filter(d => 
+                d.user_bankcode === bank && (statusFilter === 'all' || d.status === statusFilter)
+              ).length;
+              return (
+                <option key={bank} value={bank}>{bank} ({count})</option>
+              );
+            })}
+          </select>
+        </div>
+      )}
 
       {filteredDeposits.length === 0 ? (
         <div className="text-center py-12 px-4 bg-[#0e1621] border border-[#2b394a] rounded-2xl space-y-3">
