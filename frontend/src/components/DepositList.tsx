@@ -79,11 +79,25 @@ export const DepositList: React.FC<DepositListProps> = ({ deposits, onTriggerRol
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('active');
   const [bankFilter, setBankFilter] = useState<string>('all');
 
+  /**
+   * Status hiểu thị: rolled_over + có parent_id → hiển thị như 'matured' (dọ theo tab đã đáo hạn)
+   * rolled_over không có parent_id (gốc) → giữ nguyên 'rolled_over'
+   */
+  const getEffectiveStatus = (d: Deposit): string => {
+    if (d.status === 'rolled_over' && d.parent_id) return 'matured';
+    return d.status;
+  };
+
+  /** Kiểm tra khoản này đã bị tái tục chưa (có child trỏ đến nó) */
+  const hasChild = (deposit: Deposit): boolean => {
+    return deposits.some(d => d.parent_id === deposit.id);
+  };
+
   // Danh sách banks theo status hiện tại
   const banksInCurrentStatus = Array.from(
     new Set(
       deposits
-        .filter(d => statusFilter === 'all' || d.status === statusFilter)
+        .filter(d => statusFilter === 'all' || getEffectiveStatus(d) === statusFilter)
         .map(d => d.user_bankcode)
         .filter(Boolean)
     )
@@ -92,7 +106,8 @@ export const DepositList: React.FC<DepositListProps> = ({ deposits, onTriggerRol
   const getFilteredDeposits = (items: Deposit[]) => {
     return items
       .filter((item) => {
-        if (statusFilter !== 'all' && item.status !== statusFilter) return false;
+        const effective = getEffectiveStatus(item);
+        if (statusFilter !== 'all' && effective !== statusFilter) return false;
         if (bankFilter !== 'all' && item.user_bankcode !== bankFilter) return false;
         return true;
       })
@@ -122,7 +137,7 @@ export const DepositList: React.FC<DepositListProps> = ({ deposits, onTriggerRol
       {/* Status Filter */}
       <div className="flex gap-2 overflow-x-auto pb-1">
         {(Object.keys(statusLabels) as StatusFilter[]).map((key) => {
-          const count = key === 'all' ? deposits.length : deposits.filter(d => d.status === key).length;
+          const count = key === 'all' ? deposits.length : deposits.filter(d => getEffectiveStatus(d) === key).length;
           return (
             <button
               key={key}
@@ -152,7 +167,7 @@ export const DepositList: React.FC<DepositListProps> = ({ deposits, onTriggerRol
             <option value="all">Tất cả tài khoản ({banksInCurrentStatus.length})</option>
             {banksInCurrentStatus.map(bank => {
               const count = deposits.filter(d => 
-                d.user_bankcode === bank && (statusFilter === 'all' || d.status === statusFilter)
+                d.user_bankcode === bank && (statusFilter === 'all' || getEffectiveStatus(d) === statusFilter)
               ).length;
               return (
                 <option key={bank} value={bank}>{bank} ({count})</option>
@@ -311,7 +326,7 @@ export const DepositList: React.FC<DepositListProps> = ({ deposits, onTriggerRol
               >
                 Đóng
               </button>
-              {isMaturedOrOverdue(selectedDeposit) && (
+              {isMaturedOrOverdue(selectedDeposit) && !hasChild(selectedDeposit) && (
                 <button
                   onClick={() => {
                     const depToRollover = selectedDeposit;
@@ -322,6 +337,11 @@ export const DepositList: React.FC<DepositListProps> = ({ deposits, onTriggerRol
                 >
                   Tái tục
                 </button>
+              )}
+              {hasChild(selectedDeposit) && (
+                <div className="flex-1 py-3 bg-[#2c3847]/50 text-[#708499] font-semibold rounded-xl text-center text-xs">
+                  Đã tái tục ✓
+                </div>
               )}
             </div>
           </div>
