@@ -31,6 +31,7 @@ export interface ChartDataPoint {
   total: number;
   principal: number;
   interest: number;
+  baseline: number; // tổng lũy kế amount các khoản gốc (no parent)
 }
 
 interface GrowthChartProps {
@@ -110,6 +111,19 @@ export const GrowthChart: React.FC<GrowthChartProps> = ({ deposits }) => {
             pointBackgroundColor: '#64b5f6',
             pointHoverRadius: 6,
             borderWidth: 2,
+          },
+          {
+            label: 'Vốn gốc',
+            data: data.map(d => d.baseline),
+            borderColor: '#ff9800',
+            backgroundColor: 'transparent',
+            fill: false,
+            tension: 0,
+            pointRadius: 2,
+            pointBackgroundColor: '#ff9800',
+            pointHoverRadius: 5,
+            borderWidth: 1.5,
+            borderDash: [6, 3],
           }
         ]
       },
@@ -134,11 +148,14 @@ export const GrowthChart: React.FC<GrowthChartProps> = ({ deposits }) => {
                 const index = context.dataIndex;
                 const point = data[index];
                 const val = context.parsed.y ?? 0;
+                if (context.dataset.label === 'Vốn gốc') {
+                  return `Vốn gốc: ${val.toLocaleString('vi-VN')} ₫`;
+                }
                 if (point) {
                   return [
                     `Tổng: ${val.toLocaleString('vi-VN')} ₫`,
-                    `Gốc: ${point.principal.toLocaleString('vi-VN')} ₫`,
-                    `Lãi tích lũy: ${point.interest.toLocaleString('vi-VN')} ₫`
+                    `Lãi tích lũy: ${point.interest.toLocaleString('vi-VN')} ₫`,
+                    `Vốn gốc: ${point.baseline.toLocaleString('vi-VN')} ₫`
                   ];
                 }
                 return `${val.toLocaleString('vi-VN')} ₫`;
@@ -307,9 +324,10 @@ export function generateStepWiseGrowthData(deposits: Deposit[]): ChartDataPoint[
   const endDate: Date = maxDate;
 
   // Tính tổng tại thời điểm T
-  const computeTotalAt = (targetDate: Date): { principal: number; interest: number } => {
+  const computeTotalAt = (targetDate: Date): { principal: number; interest: number; baseline: number } => {
     let principal = 0;
     let interest = 0;
+    let baseline = 0;
 
     chains.forEach(chain => {
       let activeDep: Deposit | null = null;
@@ -331,9 +349,18 @@ export function generateStepWiseGrowthData(deposits: Deposit[]): ChartDataPoint[
           }
         } catch { /* skip */ }
       }
+
+      // Baseline: lũy kế amount của các khoản gốc (no parent) đã được tạo tại thời điểm này
+      const origin = chain[0]; // khoản gốc luôn ở đầu chain
+      try {
+        const originDate = parseClientDateString(origin.created_at);
+        if (originDate <= targetDate) {
+          baseline += origin.amount;
+        }
+      } catch { /* skip */ }
     });
 
-    return { principal, interest };
+    return { principal, interest, baseline };
   };
 
   // Tạo data points theo bước 1 tháng
@@ -346,12 +373,13 @@ export function generateStepWiseGrowthData(deposits: Deposit[]): ChartDataPoint[
     const yyyy = cursor.getFullYear();
     const dateStr = `${mm}/${yyyy}`;
 
-    const { principal, interest } = computeTotalAt(cursor);
+    const { principal, interest, baseline } = computeTotalAt(cursor);
     dataPoints.push({
       date: dateStr,
       total: principal + interest,
       principal,
-      interest
+      interest,
+      baseline
     });
 
     // Tiến tới tháng tiếp theo
@@ -360,7 +388,7 @@ export function generateStepWiseGrowthData(deposits: Deposit[]): ChartDataPoint[
 
   // Thêm điểm cuối cùng (ngày đáo hạn chính xác) nếu chưa có
   const lastPoint = dataPoints[dataPoints.length - 1];
-  const { principal: endP, interest: endI } = computeTotalAt(endDate);
+  const { principal: endP, interest: endI, baseline: endB } = computeTotalAt(endDate);
   const endTotal = endP + endI;
   if (!lastPoint || lastPoint.total !== endTotal) {
     const edd = String(endDate.getDate()).padStart(2, '0');
@@ -370,7 +398,8 @@ export function generateStepWiseGrowthData(deposits: Deposit[]): ChartDataPoint[
       date: `${edd}/${emm}/${eyyyy}`,
       total: endTotal,
       principal: endP,
-      interest: endI
+      interest: endI,
+      baseline: endB
     });
   }
 
