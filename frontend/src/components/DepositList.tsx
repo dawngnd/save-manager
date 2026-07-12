@@ -320,9 +320,9 @@ export const DepositList: React.FC<DepositListProps> = ({ deposits, onTriggerRol
                           <div className="text-xs font-semibold text-[#f5f5f5]">
                             Kỳ {idx + 1}: {formatCurrency(dep.amount)}
                             {idx === 0 && <span className="text-[#708499] ml-1">(gốc)</span>}
-                            {idx > 0 && (() => {
+                            {(() => {
                               const ai = getActualInterest(dep);
-                              return ai != null ? (
+                              return ai != null && ai !== 0 ? (
                                 <span className={`ml-1 ${ai >= 0 ? 'text-emerald-400' : 'text-[#ff4d4d]'}`}>
                                   ({ai >= 0 ? '+' : ''}{ai.toLocaleString('vi-VN')} ₫)
                                 </span>

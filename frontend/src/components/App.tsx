@@ -4,6 +4,7 @@ import { DepositForm } from './DepositForm';
 import { RolloverForm } from './RolloverForm';
 import { GrowthChart } from './GrowthChart';
 import { BankSummaryChart } from './BankSummaryChart';
+import { InterestRateChart } from './InterestRateChart';
 import { retrieveLaunchParams } from '@telegram-apps/sdk';
 import { Deposit } from '../types';
 import { useDepositsCache } from '../hooks/useDepositsCache';
@@ -15,6 +16,7 @@ export const App: React.FC = () => {
   const [rolloverDeposit, setRolloverDeposit] = useState<Deposit | null>(null);
   const [showChart, setShowChart] = useState<boolean>(false);
   const [showBankSummary, setShowBankSummary] = useState<boolean>(false);
+  const [showRateChart, setShowRateChart] = useState<boolean>(false);
 
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
@@ -72,6 +74,12 @@ export const App: React.FC = () => {
             >
               🏦
             </button>
+            <button
+              onClick={() => setShowRateChart(!showRateChart)}
+              className={`px-3.5 py-2 text-xs font-semibold rounded-xl transition duration-150 cursor-pointer ${showRateChart ? 'bg-[#e91e63]/20 text-[#e91e63]' : 'bg-[#2c3847] hover:bg-[#e91e63]/20 hover:text-[#e91e63]'}`}
+            >
+              📉
+            </button>
           </div>
         </div>
 
@@ -80,6 +88,9 @@ export const App: React.FC = () => {
 
         {/* Tổng hợp theo tài khoản */}
         {showBankSummary && <BankSummaryChart deposits={deposits} />}
+
+        {/* Lãi suất theo ngân hàng */}
+        {showRateChart && <InterestRateChart deposits={deposits} />}
 
         {/* Deposit List Panel */}
         <div className="bg-[#0e1621] border border-[#2b394a] rounded-2xl p-5 shadow-2xl space-y-4">
