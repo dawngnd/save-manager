@@ -16,10 +16,15 @@ export const DepositList: React.FC<DepositListProps> = ({ deposits, onTriggerRol
     return value.toLocaleString('vi-VN') + ' ₫';
   };
 
-  /** Lãi thực tế = child amount - amount hiện tại. Không có child_id → 0 */
+  /** Lãi thực tế = child.amount - amount. Fallback scan nếu child_id chưa migrate */
   const getActualInterest = (deposit: Deposit): number | null => {
-    if (!deposit.child_id) return 0;
-    const child = deposits.find(d => d.id === deposit.child_id);
+    // Tìm child: ưu tiên child_id, fallback scan parent_id
+    let child: Deposit | undefined;
+    if (deposit.child_id) {
+      child = deposits.find(d => d.id === deposit.child_id);
+    } else {
+      child = deposits.find(d => d.parent_id === deposit.id);
+    }
     if (!child) return 0;
     return child.amount - deposit.amount;
   };
@@ -88,9 +93,11 @@ export const DepositList: React.FC<DepositListProps> = ({ deposits, onTriggerRol
     return d.status;
   };
 
-  /** Kiểm tra khoản này đã bị tái tục chưa (có child_id) */
+  /** Kiểm tra khoản này đã bị tái tục chưa */
   const hasChild = (deposit: Deposit): boolean => {
-    return !!deposit.child_id;
+    if (deposit.child_id) return true;
+    // Fallback scan nếu chưa migrate child_id
+    return deposits.some(d => d.parent_id === deposit.id);
   };
 
   // Danh sách banks theo status hiện tại
@@ -207,9 +214,23 @@ export const DepositList: React.FC<DepositListProps> = ({ deposits, onTriggerRol
         {selectedDeposit && (
           <div className="space-y-5 text-sm">
             <div className="bg-[#17212b] border border-[#2c3847] rounded-xl p-4 space-y-3 font-mono">
-              <div className="flex justify-between border-b border-[#2c3847]/40 pb-2">
+              <div className="flex justify-between items-center border-b border-[#2c3847]/40 pb-2">
                 <span className="text-[#708499]">Mã khoản:</span>
-                <span className="text-[#64b5f6] font-semibold">{selectedDeposit.id}</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[#64b5f6] font-semibold text-xs">{selectedDeposit.id}</span>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(selectedDeposit.id);
+                    }}
+                    className="text-[#708499] hover:text-[#64b5f6] transition cursor-pointer active:scale-90"
+                    title="Copy ID"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                    </svg>
+                  </button>
+                </div>
               </div>
               <div className="flex justify-between border-b border-[#2c3847]/40 pb-2">
                 <span className="text-[#708499]">Tài khoản:</span>
@@ -326,7 +347,7 @@ export const DepositList: React.FC<DepositListProps> = ({ deposits, onTriggerRol
               >
                 Đóng
               </button>
-              {isMaturedOrOverdue(selectedDeposit) && !hasChild(selectedDeposit) && (
+              {isMaturedOrOverdue(selectedDeposit) && selectedDeposit.status !== 'rolled_over' && !hasChild(selectedDeposit) && (
                 <button
                   onClick={() => {
                     const depToRollover = selectedDeposit;
@@ -338,7 +359,7 @@ export const DepositList: React.FC<DepositListProps> = ({ deposits, onTriggerRol
                   Tái tục
                 </button>
               )}
-              {hasChild(selectedDeposit) && (
+              {(hasChild(selectedDeposit) || selectedDeposit.status === 'rolled_over') && (
                 <div className="flex-1 py-3 bg-[#2c3847]/50 text-[#708499] font-semibold rounded-xl text-center text-xs">
                   Đã tái tục ✓
                 </div>

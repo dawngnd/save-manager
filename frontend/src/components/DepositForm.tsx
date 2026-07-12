@@ -44,10 +44,16 @@ export const DepositForm: React.FC<DepositFormProps> = ({
       const yyyy = today.getFullYear();
       setCreatedAt(`${dd}/${mm}/${yyyy}`);
       
+      // Auto-fill maturityAt = today + 1 năm
+      const nextYear = new Date(today.getFullYear() + 1, today.getMonth(), today.getDate());
+      const dd2 = String(nextYear.getDate()).padStart(2, '0');
+      const mm2 = String(nextYear.getMonth() + 1).padStart(2, '0');
+      const yyyy2 = nextYear.getFullYear();
+      setMaturityAt(`${dd2}/${mm2}/${yyyy2}`);
+      
       // Reset form states
       setAmount('');
       setInterestRate('');
-      setMaturityAt('');
       setErrors({});
       setTouched({});
       setSubmitError(null);
@@ -139,10 +145,33 @@ export const DepositForm: React.FC<DepositFormProps> = ({
     validateField(field, val);
   };
 
+  /** Tính ngày + 1 năm từ DD/MM/YYYY */
+  const addOneYear = (dateStr: string): string => {
+    if (!isValidDateStr(dateStr)) return '';
+    const parts = dateStr.split('/');
+    const d = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10) - 1;
+    const y = parseInt(parts[2], 10);
+    const newDate = new Date(y + 1, m, d);
+    // Xử lý 29/02 → 01/03 năm sau
+    const dd = String(newDate.getDate()).padStart(2, '0');
+    const mm = String(newDate.getMonth() + 1).padStart(2, '0');
+    const yyyy = newDate.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  };
+
   const handleDateChange = (value: string, setter: (v: string) => void, field: string) => {
     const formatted = formatMaskDate(value, field === 'createdAt' ? createdAt : maturityAt);
     setter(formatted);
     
+    // Auto-fill maturityAt = createdAt + 1 năm khi người dùng nhập xong start date
+    if (field === 'createdAt' && isValidDateStr(formatted)) {
+      const autoEnd = addOneYear(formatted);
+      if (autoEnd) {
+        setMaturityAt(autoEnd);
+      }
+    }
+
     // Validate on type if already touched
     if (touched[field]) {
       validateField(field, formatted);
