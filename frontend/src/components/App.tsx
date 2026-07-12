@@ -4,40 +4,17 @@ import { DepositForm } from './DepositForm';
 import { RolloverForm } from './RolloverForm';
 import { GrowthChart } from './GrowthChart';
 import { retrieveLaunchParams } from '@telegram-apps/sdk';
-import { callBackendApi } from '../api';
 import { Deposit } from '../types';
+import { useDepositsCache } from '../hooks/useDepositsCache';
 
 export const App: React.FC = () => {
-  const [deposits, setDeposits] = useState<Deposit[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const { deposits, loading, error, refresh } = useDepositsCache();
   const [isFormOpen, setIsFormOpen] = useState<boolean>(false);
   const [isRolloverOpen, setIsRolloverOpen] = useState<boolean>(false);
   const [rolloverDeposit, setRolloverDeposit] = useState<Deposit | null>(null);
   const [showChart, setShowChart] = useState<boolean>(false);
 
-  const fetchDeposits = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await callBackendApi<Deposit[]>({
-        action: 'get_deposits',
-      });
-      setDeposits(data);
-    } catch (err: any) {
-      console.error('Failed to fetch deposits:', err);
-      setError(err.message || 'Không thể tải danh sách khoản tiết kiệm.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchDeposits();
-  }, []);
-
-  useEffect(() => {
-    // Kiểm tra URL query string hoặc Telegram start param
     const searchParams = new URLSearchParams(window.location.search);
     const viewParam = searchParams.get('view');
     
@@ -53,10 +30,6 @@ export const App: React.FC = () => {
       setShowChart(true);
     }
   }, []);
-
-  const handleRefresh = () => {
-    fetchDeposits();
-  };
 
   const handleTriggerRollover = (deposit: Deposit) => {
     setRolloverDeposit(deposit);
@@ -76,12 +49,22 @@ export const App: React.FC = () => {
               <div className="text-sm font-bold text-[#64b5f6]">Quản lý tiết kiệm</div>
             </div>
           </div>
-          <button
-            onClick={() => setShowChart(!showChart)}
-            className="px-3.5 py-2 bg-[#2c3847] hover:bg-[#5288c1]/20 hover:text-[#64b5f6] text-xs font-semibold rounded-xl transition duration-150 cursor-pointer"
-          >
-            {showChart ? '📋 Danh sách' : '📊 Biểu đồ'}
-          </button>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={refresh}
+              disabled={loading}
+              className="px-3 py-2 bg-[#2c3847] hover:bg-[#374657] text-xs font-semibold rounded-xl transition duration-150 cursor-pointer disabled:opacity-50"
+              title="Lấy danh sách mới từ server"
+            >
+              {loading ? '⏳' : '🔄'}
+            </button>
+            <button
+              onClick={() => setShowChart(!showChart)}
+              className="px-3.5 py-2 bg-[#2c3847] hover:bg-[#5288c1]/20 hover:text-[#64b5f6] text-xs font-semibold rounded-xl transition duration-150 cursor-pointer"
+            >
+              {showChart ? '📋 Danh sách' : '📊 Biểu đồ'}
+            </button>
+          </div>
         </div>
 
         {/* Biểu đồ tăng trưởng */}
@@ -93,16 +76,12 @@ export const App: React.FC = () => {
             <h2 className="text-lg font-bold text-[#f5f5f5]">
               Tất cả khoản tiết kiệm
             </h2>
-            <button
-              onClick={handleRefresh}
-              disabled={loading}
-              className="text-xs font-medium text-[#64b5f6] hover:text-[#90caf9] active:scale-95 disabled:opacity-50 transition cursor-pointer"
-            >
-              {loading ? 'Đang tải...' : 'Làm mới'}
-            </button>
+            <div className="text-[10px] text-[#708499]">
+              {deposits.length} khoản
+            </div>
           </div>
 
-          {loading ? (
+          {loading && deposits.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 space-y-3">
               <div className="w-7 h-7 border-3 border-[#5288c1] border-t-transparent rounded-full animate-spin"></div>
               <p className="text-xs text-[#708499] animate-pulse">Đang truy vấn dữ liệu...</p>
@@ -111,7 +90,7 @@ export const App: React.FC = () => {
             <div className="bg-[#ff4d4d]/10 border border-[#ff4d4d]/20 text-[#ff4d4d] text-center p-4 rounded-xl space-y-2 text-xs">
               <p>{error}</p>
               <button
-                onClick={handleRefresh}
+                onClick={refresh}
                 className="px-4 py-1.5 bg-[#ff4d4d]/25 hover:bg-[#ff4d4d]/30 text-white rounded-lg font-semibold transition"
               >
                 Thử lại
@@ -135,7 +114,7 @@ export const App: React.FC = () => {
         <DepositForm
           isOpen={isFormOpen}
           onClose={() => setIsFormOpen(false)}
-          onSuccess={handleRefresh}
+          onSuccess={refresh}
         />
 
         {/* Rollover Form Bottom Sheet */}
@@ -147,7 +126,7 @@ export const App: React.FC = () => {
               setRolloverDeposit(null);
             }}
             oldDeposit={rolloverDeposit}
-            onSuccess={handleRefresh}
+            onSuccess={refresh}
           />
         )}
       </div>
