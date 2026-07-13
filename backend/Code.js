@@ -263,32 +263,12 @@ function handleWriteActionWithLock(action, payload, authenticatedChatId) {
  */
 function executeGetDeposits(sheets, payload, authenticatedChatId) {
   const depositsSheet = sheets.deposits;
-  const usersSheet = sheets.users;
   const lastRow = depositsSheet.getLastRow();
   const result = [];
-  
-  // Tìm danh sách username_bankcode thuộc về authenticated user
-  const allowedBankcodes = new Set();
-  if (authenticatedChatId) {
-    const usersLastRow = usersSheet.getLastRow();
-    if (usersLastRow > 1) {
-      const usersData = usersSheet.getRange(2, 1, usersLastRow - 1, 2).getValues();
-      for (let i = 0; i < usersData.length; i++) {
-        if (String(usersData[i][1]) === String(authenticatedChatId)) {
-          allowedBankcodes.add(usersData[i][0]);
-        }
-      }
-    }
-  }
   
   if (lastRow > 1) {
     const values = depositsSheet.getRange(2, 1, lastRow - 1, 10).getValues();
     for (let i = 0; i < values.length; i++) {
-      // Filter: chỉ trả deposits thuộc về user đang auth
-      const depositBankcode = values[i][7];
-      if (authenticatedChatId && allowedBankcodes.size > 0 && !allowedBankcodes.has(depositBankcode)) {
-        continue;
-      }
       result.push({
         id: values[i][0],
         amount: Number(values[i][1]),
@@ -574,25 +554,6 @@ function executeRolloverDeposit(sheets, payload, authenticatedChatId) {
   }
   if (oldDepositData.status !== "active") {
     throw new Error("Khoản gửi cũ không ở trạng thái hoạt động (active), không thể tái tục.");
-  }
-  
-  // Authorization: kiểm tra deposit thuộc về authenticated user
-  if (authenticatedChatId) {
-    const usersSheet = sheets.users;
-    const usersLastRow = usersSheet.getLastRow();
-    let isOwner = false;
-    if (usersLastRow > 1) {
-      const usersData = usersSheet.getRange(2, 1, usersLastRow - 1, 2).getValues();
-      for (let i = 0; i < usersData.length; i++) {
-        if (usersData[i][0] === oldDepositData.user_bankcode && String(usersData[i][1]) === String(authenticatedChatId)) {
-          isOwner = true;
-          break;
-        }
-      }
-    }
-    if (!isOwner) {
-      throw new Error("Bạn không có quyền tái tục khoản gửi này.");
-    }
   }
   
   // Cập nhật trạng thái khoản cũ thành 'rolled_over' và gán child_id
