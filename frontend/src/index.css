@@ -69,3 +69,35 @@ body {
 .animate-fade-in {
   animation: fadeIn 0.2s ease-out forwards;
 }
+
+/* Chart horizontal scrollbar — luôn hiển thị trên desktop */
+.chart-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--tg-theme-hint-color) var(--tg-theme-secondary-bg-color);
+}
+
+.chart-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+
+.chart-scroll::-webkit-scrollbar-track {
+  background: var(--tg-theme-secondary-bg-color);
+  border-radius: 4px;
+}
+
+.chart-scroll::-webkit-scrollbar-thumb {
+  background: var(--tg-theme-hint-color);
+  border-radius: 4px;
+  border: 1px solid var(--tg-theme-secondary-bg-color);
+}
+
+.chart-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--tg-theme-button-color);
+}
+
+/* Đảm bảo scrollbar luôn hiển thị trên desktop (không auto-hide) */
+@media (hover: hover) and (pointer: fine) {
+  .chart-scroll {
+    overflow-x: scroll !important;
+  }
+}

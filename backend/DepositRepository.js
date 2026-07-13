@@ -177,7 +177,13 @@ class DepositRepository {
     var newDepositId = DepositRepository.generateId();
 
     // Gán child_id cho bản ghi cha
+    Logger.log('Rollover: Ghi child_id=' + newDepositId + ' vào row=' + oldDepositRowIndex + ', col=' + DEP_SHEET_COL_CHILD_ID);
     depositsSheet.getRange(oldDepositRowIndex, DEP_SHEET_COL_CHILD_ID, 1, 1).setValue(newDepositId);
+
+    // Flush ngay lập tức để GAS commit thay đổi trước khi ghi dòng mới
+    if (typeof SpreadsheetApp !== 'undefined') {
+      SpreadsheetApp.flush();
+    }
 
     var newRow = [
       newDepositId, newAmount, newInterestRate, STATUS_ACTIVE, newExpectedInterest,
@@ -187,9 +193,20 @@ class DepositRepository {
     ];
 
     var newLastRow = depositsSheet.getLastRow() + 1;
+    Logger.log('Rollover: Ghi khoản mới vào row=' + newLastRow);
     var newRange = depositsSheet.getRange(newLastRow, 1, 1, DEP_TOTAL_COLUMNS);
     depositsSheet.getRange(newLastRow, DEP_SHEET_COL_CREATED_AT, 1, 2).setNumberFormat('@');
     newRange.setValues([newRow]);
+
+    // Verify child_id đã được lưu thực sự
+    if (typeof SpreadsheetApp !== 'undefined') {
+      SpreadsheetApp.flush();
+      var savedChildId = depositsSheet.getRange(oldDepositRowIndex, DEP_SHEET_COL_CHILD_ID, 1, 1).getValue();
+      Logger.log('Rollover: Verify child_id sau flush = ' + savedChildId);
+      if (savedChildId !== newDepositId) {
+        Logger.log('⚠️ Rollover: child_id KHÔNG khớp! expected=' + newDepositId + ', got=' + savedChildId);
+      }
+    }
 
     return ResponseHelper.json('success', {
       old_deposit: {

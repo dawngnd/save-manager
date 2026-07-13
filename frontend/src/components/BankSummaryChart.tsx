@@ -32,7 +32,9 @@ interface BankData {
 export const BankSummaryChart: React.FC<BankSummaryChartProps> = ({ deposits }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const chartInstanceRef = useRef<Chart | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
+  const [chartWidth, setChartWidth] = useState<number>(0);
 
   // Group active deposits by user_bankcode
   const bankData: BankData[] = (() => {
@@ -63,6 +65,11 @@ export const BankSummaryChart: React.FC<BankSummaryChartProps> = ({ deposits }) 
     if (chartInstanceRef.current) {
       chartInstanceRef.current.destroy();
     }
+
+    // 120px mỗi cột, tối thiểu = container width
+    const containerWidth = scrollContainerRef.current?.clientWidth || 400;
+    const calcWidth = Math.max(bankData.length * 120, containerWidth);
+    setChartWidth(calcWidth);
 
     const ctx = canvasRef.current.getContext('2d');
     if (!ctx) return;
@@ -192,9 +199,15 @@ export const BankSummaryChart: React.FC<BankSummaryChartProps> = ({ deposits }) 
             </div>
           </div>
 
-          {/* Chart */}
-          <div style={{ height: `${Math.max(200, bankData.length * 60)}px` }}>
-            <canvas ref={canvasRef} />
+          {/* Scrollable Chart */}
+          <div
+            ref={scrollContainerRef}
+            className="w-full overflow-x-auto overflow-y-hidden chart-scroll"
+            style={{ WebkitOverflowScrolling: 'touch' }}
+          >
+            <div style={{ width: chartWidth > 0 ? `${chartWidth}px` : '100%', height: `${Math.max(200, bankData.length * 60)}px` }}>
+              <canvas ref={canvasRef} />
+            </div>
           </div>
         </>
       )}

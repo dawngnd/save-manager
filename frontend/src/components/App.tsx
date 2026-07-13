@@ -17,6 +17,7 @@ export const App: React.FC = () => {
   const [showChart, setShowChart] = useState<boolean>(false);
   const [showBankSummary, setShowBankSummary] = useState<boolean>(false);
   const [showRateChart, setShowRateChart] = useState<boolean>(false);
+  const [showDeposits, setShowDeposits] = useState<boolean>(true);
 
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
@@ -95,31 +96,46 @@ export const App: React.FC = () => {
         {/* Deposit List Panel */}
         <div className="bg-[#0e1621] border border-[#2b394a] rounded-2xl p-5 shadow-2xl space-y-4">
           <div className="flex justify-between items-center border-b border-[#2b394a] pb-3">
-            <h2 className="text-lg font-bold text-[#f5f5f5]">
-              Tất cả khoản tiết kiệm
-            </h2>
-            <div className="text-[10px] text-[#708499]">
-              {deposits.length} khoản
+            <div className="flex items-center space-x-2">
+              <span className="text-lg">📋</span>
+              <h2 className="text-lg font-bold text-[#f5f5f5]">
+                Tất cả khoản tiết kiệm
+              </h2>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="text-[10px] text-[#708499]">
+                {deposits.length} khoản
+              </div>
+              <button
+                onClick={() => setShowDeposits(!showDeposits)}
+                className="px-2.5 py-1 text-xs font-semibold bg-[#2c3847] hover:bg-[#374657] text-[#64b5f6] rounded-lg transition duration-150 cursor-pointer"
+              >
+                {showDeposits ? 'Ẩn' : 'Hiện'}
+              </button>
             </div>
           </div>
 
-          {loading && deposits.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 space-y-3">
-              <div className="w-7 h-7 border-3 border-[#5288c1] border-t-transparent rounded-full animate-spin"></div>
-              <p className="text-xs text-[#708499] animate-pulse">Đang truy vấn dữ liệu...</p>
-            </div>
-          ) : error ? (
-            <div className="bg-[#ff4d4d]/10 border border-[#ff4d4d]/20 text-[#ff4d4d] text-center p-4 rounded-xl space-y-2 text-xs">
-              <p>{error}</p>
-              <button
-                onClick={refresh}
-                className="px-4 py-1.5 bg-[#ff4d4d]/25 hover:bg-[#ff4d4d]/30 text-white rounded-lg font-semibold transition"
-              >
-                Thử lại
-              </button>
-            </div>
-          ) : (
-            <DepositList deposits={deposits} onTriggerRollover={handleTriggerRollover} />
+          {showDeposits && (
+            <>
+              {loading && deposits.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 space-y-3">
+                  <div className="w-7 h-7 border-3 border-[#5288c1] border-t-transparent rounded-full animate-spin"></div>
+                  <p className="text-xs text-[#708499] animate-pulse">Đang truy vấn dữ liệu...</p>
+                </div>
+              ) : error ? (
+                <div className="bg-[#ff4d4d]/10 border border-[#ff4d4d]/20 text-[#ff4d4d] text-center p-4 rounded-xl space-y-2 text-xs">
+                  <p>{error}</p>
+                  <button
+                    onClick={refresh}
+                    className="px-4 py-1.5 bg-[#ff4d4d]/25 hover:bg-[#ff4d4d]/30 text-white rounded-lg font-semibold transition"
+                  >
+                    Thử lại
+                  </button>
+                </div>
+              ) : (
+                <DepositList deposits={deposits} onTriggerRollover={handleTriggerRollover} />
+              )}
+            </>
           )}
         </div>
 

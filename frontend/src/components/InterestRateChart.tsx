@@ -286,7 +286,7 @@ export const InterestRateChart: React.FC<InterestRateChartProps> = ({ deposits }
           {/* Chart */}
           <div
             ref={scrollContainerRef}
-            className="w-full overflow-x-auto overflow-y-hidden"
+            className="w-full overflow-x-auto overflow-y-hidden chart-scroll"
             style={{ WebkitOverflowScrolling: 'touch' }}
           >
             <div style={{ width: chartWidth > 0 ? `${chartWidth}px` : '100%', height: '200px' }}>
