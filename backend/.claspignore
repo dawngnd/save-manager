@@ -7,5 +7,6 @@ vite.config.*
 dist/**
 SETUP.md
 *.md
+Tests.js
 .git/**
 .gitignore

@@ -176,9 +176,12 @@ function doPost(e) {
       const botToken = properties ? properties.getProperty("TELEGRAM_BOT_TOKEN") : null;
       const verifyResult = verifyTelegramWebAppData(initData, botToken);
       if (verifyResult !== "") {
-        return buildJsonResponse("error", "Xác thực thất bại: " + verifyResult);
+        return buildJsonResponse("error", "Xác thực thất bại.");
       }
     }
+    
+    // Extract authenticated telegram user ID từ initData
+    const authenticatedChatId = extractTelegramUserId(initData);
     
     // Yêu cầu chỉ đọc: Không sử dụng LockService để tránh nghẽn luồng đọc
     if (action === "get_users") {
@@ -189,23 +192,26 @@ function doPost(e) {
     if (action === "get_deposits") {
       const sheets = initializeSheets();
       
-      // Tự động liên kết Chat ID nếu có
-      if (payload.telegram_chat_id && payload.username_bankcode) {
-        linkTelegramChatId(sheets.users, payload.username_bankcode, payload.telegram_chat_id);
+      // Tự động liên kết Chat ID nếu có — validate ownership
+      if (payload.telegram_chat_id && payload.username_bankcode && authenticatedChatId) {
+        // Chỉ cho phép link nếu chat_id khớp với authenticated user
+        if (String(payload.telegram_chat_id) === String(authenticatedChatId)) {
+          linkTelegramChatId(sheets.users, payload.username_bankcode, payload.telegram_chat_id);
+        }
       }
       
-      return executeGetDeposits(sheets, payload);
+      return executeGetDeposits(sheets, payload, authenticatedChatId);
     }
     
     // Yêu cầu ghi: Cần sử dụng LockService bảo vệ dữ liệu chống race condition
     if (action === "add_deposit" || action === "rollover_deposit") {
-      return handleWriteActionWithLock(action, payload);
+      return handleWriteActionWithLock(action, payload, authenticatedChatId);
     }
     
     return buildJsonResponse("error", "Hành động (action) không được hỗ trợ.");
   } catch (error) {
     Logger.log("Lỗi doPost: " + error.toString());
-    return buildJsonResponse("error", "Lỗi xử lý yêu cầu phía server: " + error.message);
+    return buildJsonResponse("error", "Lỗi xử lý yêu cầu phía server.");
   }
 }
 
@@ -215,7 +221,7 @@ function doPost(e) {
  * @param {object} payload
  * @returns {GoogleAppsScript.Content.TextOutput|object}
  */
-function handleWriteActionWithLock(action, payload) {
+function handleWriteActionWithLock(action, payload, authenticatedChatId) {
   const hasLockService = typeof LockService !== 'undefined';
   const lock = hasLockService ? LockService.getScriptLock() : null;
   let hasLock = false;
@@ -235,12 +241,12 @@ function handleWriteActionWithLock(action, payload) {
     if (action === "add_deposit") {
       return executeAddDeposit(sheets, payload);
     } else if (action === "rollover_deposit") {
-      return executeRolloverDeposit(sheets, payload);
+      return executeRolloverDeposit(sheets, payload, authenticatedChatId);
     }
     
   } catch (err) {
     Logger.log("Lỗi nghiệp vụ ghi: " + err.toString());
-    return buildJsonResponse("error", err.message);
+    return buildJsonResponse("error", "Đã xảy ra lỗi khi xử lý giao dịch.");
   } finally {
     // Luôn giải phóng lock nếu đã lấy thành công
     if (hasLock && lock) {
@@ -255,14 +261,34 @@ function handleWriteActionWithLock(action, payload) {
  * @param {object} payload
  * @returns {GoogleAppsScript.Content.TextOutput|object}
  */
-function executeGetDeposits(sheets, payload) {
+function executeGetDeposits(sheets, payload, authenticatedChatId) {
   const depositsSheet = sheets.deposits;
+  const usersSheet = sheets.users;
   const lastRow = depositsSheet.getLastRow();
   const result = [];
+  
+  // Tìm danh sách username_bankcode thuộc về authenticated user
+  const allowedBankcodes = new Set();
+  if (authenticatedChatId) {
+    const usersLastRow = usersSheet.getLastRow();
+    if (usersLastRow > 1) {
+      const usersData = usersSheet.getRange(2, 1, usersLastRow - 1, 2).getValues();
+      for (let i = 0; i < usersData.length; i++) {
+        if (String(usersData[i][1]) === String(authenticatedChatId)) {
+          allowedBankcodes.add(usersData[i][0]);
+        }
+      }
+    }
+  }
   
   if (lastRow > 1) {
     const values = depositsSheet.getRange(2, 1, lastRow - 1, 10).getValues();
     for (let i = 0; i < values.length; i++) {
+      // Filter: chỉ trả deposits thuộc về user đang auth
+      const depositBankcode = values[i][7];
+      if (authenticatedChatId && allowedBankcodes.size > 0 && !allowedBankcodes.has(depositBankcode)) {
+        continue;
+      }
       result.push({
         id: values[i][0],
         amount: Number(values[i][1]),
@@ -506,7 +532,7 @@ function handleTelegramWebhook(payload) {
  * @param {object} payload
  * @returns {GoogleAppsScript.Content.TextOutput|object}
  */
-function executeRolloverDeposit(sheets, payload) {
+function executeRolloverDeposit(sheets, payload, authenticatedChatId) {
   const oldDepositId = payload.id;
   const newAmount = Number(payload.new_amount);
   const newInterestRate = Number(payload.new_interest_rate);
@@ -548,6 +574,25 @@ function executeRolloverDeposit(sheets, payload) {
   }
   if (oldDepositData.status !== "active") {
     throw new Error("Khoản gửi cũ không ở trạng thái hoạt động (active), không thể tái tục.");
+  }
+  
+  // Authorization: kiểm tra deposit thuộc về authenticated user
+  if (authenticatedChatId) {
+    const usersSheet = sheets.users;
+    const usersLastRow = usersSheet.getLastRow();
+    let isOwner = false;
+    if (usersLastRow > 1) {
+      const usersData = usersSheet.getRange(2, 1, usersLastRow - 1, 2).getValues();
+      for (let i = 0; i < usersData.length; i++) {
+        if (usersData[i][0] === oldDepositData.user_bankcode && String(usersData[i][1]) === String(authenticatedChatId)) {
+          isOwner = true;
+          break;
+        }
+      }
+    }
+    if (!isOwner) {
+      throw new Error("Bạn không có quyền tái tục khoản gửi này.");
+    }
   }
   
   // Cập nhật trạng thái khoản cũ thành 'rolled_over' và gán child_id
@@ -836,6 +881,32 @@ function checkMaturityAndSendAlerts() {
 }
 
 /**
+ * Extract telegram user ID từ initData query string.
+ * initData chứa "user={json_encoded}" → parse ra user.id
+ * @param {string} initData
+ * @returns {string|null} telegram user id hoặc null
+ */
+function extractTelegramUserId(initData) {
+  if (!initData) return null;
+  try {
+    const parts = initData.split('&');
+    for (let i = 0; i < parts.length; i++) {
+      const idx = parts[i].indexOf('=');
+      if (idx === -1) continue;
+      const key = decodeURIComponent(parts[i].substring(0, idx));
+      if (key === 'user') {
+        const userJson = decodeURIComponent(parts[i].substring(idx + 1));
+        const userObj = JSON.parse(userJson);
+        return userObj.id ? String(userObj.id) : null;
+      }
+    }
+  } catch (e) {
+    Logger.log("extractTelegramUserId error: " + e.toString());
+  }
+  return null;
+}
+
+/**
  * Xác thực dữ liệu initData từ Telegram Web App gửi lên.
  * @param {string} initData Chuỗi query string nhận từ client
  * @param {string} botToken Token của bot Telegram lấy từ Script Properties
@@ -846,18 +917,10 @@ function verifyTelegramWebAppData(initData, botToken) {
   
   if (!initData) {
     if (!botToken) return ""; // Bypass test offline
-    return "initData trống, botToken=SET";
+    return "initData is missing";
   }
 
-  if (initData === "mock_hash" || initData.indexOf("hash=mock_hash") !== -1) {
-    return "";
-  }
-
-  if (typeof Utilities === 'undefined') {
-    return ""; // Node.js test
-  }
-
-  if (!botToken) return "botToken MISSING";
+  if (!botToken) return "MISSING";
 
   try {
     const params = {};
@@ -872,13 +935,13 @@ function verifyTelegramWebAppData(initData, botToken) {
 
     const hash = params['hash'];
     if (!hash) {
-      return "hash not found. keys=" + Object.keys(params).join(',');
+      return "Xác thực thất bại.";
     }
 
     const authDate = parseInt(params['auth_date'], 10);
     const currentTime = Math.floor(Date.now() / 1000);
     if (isNaN(authDate) || (currentTime - authDate) > 86400) {
-      return "auth_date expired. diff=" + (currentTime - authDate) + "s";
+      return "Phiên đăng nhập đã hết hạn.";
     }
 
     const sortedKeys = Object.keys(params).filter(k => k !== 'hash').sort();
@@ -901,7 +964,8 @@ function verifyTelegramWebAppData(initData, botToken) {
     }).join('');
 
     if (signatureHex !== hash) {
-      return "HMAC mismatch. got=" + signatureHex.substring(0, 16) + "... expected=" + hash.substring(0, 16) + "...";
+      Logger.log("HMAC mismatch. got=" + signatureHex.substring(0, 16) + "... expected=" + hash.substring(0, 16) + "...");
+      return "Xác thực thất bại.";
     }
     return "";
   } catch (err) {
