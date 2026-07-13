@@ -5,6 +5,7 @@ import { RolloverForm } from './RolloverForm';
 import { GrowthChart } from './GrowthChart';
 import { BankSummaryChart } from './BankSummaryChart';
 import { InterestRateChart } from './InterestRateChart';
+import { BankShareChart } from './BankShareChart';
 import { UserShareChart } from './UserShareChart';
 import { retrieveLaunchParams } from '@telegram-apps/sdk';
 import { Deposit } from '../types';
@@ -20,6 +21,7 @@ export const App: React.FC = () => {
   const [showRateChart, setShowRateChart] = useState<boolean>(false);
   const [showDeposits, setShowDeposits] = useState<boolean>(true);
   const [showUserShare, setShowUserShare] = useState<boolean>(false);
+  const [showUserShareChart, setShowUserShareChart] = useState<boolean>(false);
 
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
@@ -89,6 +91,12 @@ export const App: React.FC = () => {
             >
               🧩
             </button>
+            <button
+              onClick={() => setShowUserShareChart(!showUserShareChart)}
+              className={`px-3.5 py-2 text-xs font-semibold rounded-xl transition duration-150 cursor-pointer ${showUserShareChart ? 'bg-[#64b5f6]/20 text-[#64b5f6]' : 'bg-[#2c3847] hover:bg-[#64b5f6]/20 hover:text-[#64b5f6]'}`}
+            >
+              👥
+            </button>
           </div>
         </div>
 
@@ -101,8 +109,11 @@ export const App: React.FC = () => {
         {/* Lãi suất theo ngân hàng */}
         {showRateChart && <InterestRateChart deposits={deposits} />}
 
+        {/* Tỷ trọng theo tài khoản */}
+        {showUserShare && <BankShareChart deposits={deposits} />}
+
         {/* Tỷ trọng theo người dùng */}
-        {showUserShare && <UserShareChart deposits={deposits} />}
+        {showUserShareChart && <UserShareChart deposits={deposits} />}
 
         {/* Deposit List Panel */}
         <div className="bg-[#0e1621] border border-[#2b394a] rounded-2xl p-5 shadow-2xl space-y-4">

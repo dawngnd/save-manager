@@ -23,51 +23,39 @@ interface UserData {
   user: string;
   amount: number;
   percent: number;
-  depositCount: number;
   bankCodes: string[];
 }
 
 const userColors = [
-  '#64b5f6', '#ce93d8', '#ffb74d', '#81c784', '#ef5350',
-  '#4dd0e1', '#ff8a65', '#aed581', '#ba68c8', '#ffd54f',
+  '#5288c1', '#4caf50', '#ff9800', '#e91e63', '#9c27b0',
+  '#00bcd4', '#ff5722', '#8bc34a', '#673ab7', '#ffc107',
+  '#03a9f4', '#cddc39', '#f44336', '#009688', '#3f51b5',
 ];
 
-/**
- * Tách phần user từ user_bankcode.
- * Hỗ trợ các format: "dangnd_vcb", "dangnd-vcb", "dangnd vcb"
- * Lấy phần trước dấu phân cách cuối cùng (_  -  khoảng trắng).
- * Nếu không có dấu phân cách → trả toàn bộ string.
- */
-function extractUser(userBankcode: string): string {
-  // Tìm dấu phân cách cuối cùng
-  const separators = ['_', '-', ' '];
-  let lastSepIdx = -1;
-  for (const sep of separators) {
-    const idx = userBankcode.lastIndexOf(sep);
-    if (idx > lastSepIdx) lastSepIdx = idx;
-  }
-  if (lastSepIdx > 0) {
-    return userBankcode.substring(0, lastSepIdx);
-  }
-  return userBankcode;
-}
-
-export const UserShareChart: React.FC<UserShareChartProps> = ({ deposits }) => {
+export const BankShareChart: React.FC<UserShareChartProps> = ({ deposits }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const chartInstanceRef = useRef<Chart | null>(null);
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
 
-  // Group active deposits theo user (phần trước dấu phân cách)
+  // Tách user từ user_bankcode: "dangnd_vcb" → "dangnd"
+  const extractUser = (bankcode: string): string => {
+    const lastUnderscore = bankcode.lastIndexOf('_');
+    if (lastUnderscore > 0) {
+      return bankcode.substring(0, lastUnderscore);
+    }
+    return bankcode;
+  };
+
+  // Group active deposits theo user
   const userData: UserData[] = (() => {
-    const map = new Map<string, { amount: number; bankCodes: Set<string>; count: number }>();
+    const map = new Map<string, { amount: number; bankCodes: Set<string> }>();
     deposits
       .filter(d => d.status === 'active')
       .forEach(d => {
         const user = extractUser(d.user_bankcode);
-        const existing = map.get(user) || { amount: 0, bankCodes: new Set<string>(), count: 0 };
+        const existing = map.get(user) || { amount: 0, bankCodes: new Set<string>() };
         existing.amount += d.amount;
         existing.bankCodes.add(d.user_bankcode);
-        existing.count += 1;
         map.set(user, existing);
       });
 
@@ -79,7 +67,6 @@ export const UserShareChart: React.FC<UserShareChartProps> = ({ deposits }) => {
         user,
         amount: data.amount,
         percent: (data.amount / totalAmount) * 100,
-        depositCount: data.count,
         bankCodes: Array.from(data.bankCodes).sort(),
       }))
       .sort((a, b) => b.amount - a.amount);
@@ -99,7 +86,7 @@ export const UserShareChart: React.FC<UserShareChartProps> = ({ deposits }) => {
 
     // Center text plugin — hiển thị tổng tài sản ở giữa doughnut
     const centerTextPlugin = {
-      id: 'userShareCenterText',
+      id: 'centerText',
       afterDraw(chart: Chart) {
         const { ctx: drawCtx, chartArea } = chart;
         if (!drawCtx || !chartArea) return;
@@ -176,7 +163,6 @@ export const UserShareChart: React.FC<UserShareChartProps> = ({ deposits }) => {
                 if (!d) return '';
                 return [
                   `${d.percent.toFixed(1)}% tổng tài sản`,
-                  `${d.depositCount} khoản gửi`,
                   `TK: ${d.bankCodes.join(', ')}`,
                 ];
               },
@@ -208,8 +194,8 @@ export const UserShareChart: React.FC<UserShareChartProps> = ({ deposits }) => {
       {/* Header */}
       <div className="flex justify-between items-center border-b border-[#2b394a] pb-2">
         <div className="flex items-center space-x-2">
-          <span className="text-lg">👥</span>
-          <h2 className="text-sm font-bold text-[#f5f5f5]">Tỷ trọng theo người dùng</h2>
+          <span className="text-lg">🧩</span>
+          <h2 className="text-sm font-bold text-[#f5f5f5]">Tỷ trọng theo bank</h2>
         </div>
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
@@ -222,18 +208,14 @@ export const UserShareChart: React.FC<UserShareChartProps> = ({ deposits }) => {
       {!isCollapsed && (
         <>
           {/* Summary */}
-          <div className="grid grid-cols-3 gap-3 text-xs border-b border-[#2b394a]/50 pb-2">
+          <div className="grid grid-cols-2 gap-3 text-xs border-b border-[#2b394a]/50 pb-2">
             <div>
               <div className="text-[#708499]">Tổng tài sản</div>
               <div className="font-bold text-[#f5f5f5]">{totalAssets.toLocaleString('vi-VN')} ₫</div>
             </div>
             <div>
-              <div className="text-[#708499]">Người dùng</div>
+              <div className="text-[#708499]">Số ngân hàng</div>
               <div className="font-bold text-[#64b5f6]">{userData.length}</div>
-            </div>
-            <div>
-              <div className="text-[#708499]">Tổng khoản</div>
-              <div className="font-bold text-[#ce93d8]">{userData.reduce((s, d) => s + d.depositCount, 0)}</div>
             </div>
           </div>
 
@@ -244,25 +226,25 @@ export const UserShareChart: React.FC<UserShareChartProps> = ({ deposits }) => {
             </div>
           </div>
 
-          {/* Legend — mỗi user 1 dòng */}
-          <div className="space-y-2 pt-1">
+          {/* Legend */}
+          <div className="space-y-1.5 pt-1">
             {userData.map((data, i) => (
-              <div key={data.user} className="bg-[#17212b] border border-[#2c3847] rounded-lg px-3 py-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="inline-block w-3 h-3 rounded-full"
-                      style={{ backgroundColor: userColors[i % userColors.length] }}
-                    />
-                    <span className="text-[#f5f5f5] font-bold text-sm">{data.user}</span>
-                  </div>
-                  <span className="font-bold text-sm" style={{ color: userColors[i % userColors.length] }}>
+              <div key={data.user} className="flex items-center justify-between text-xs px-1">
+                <div className="flex items-center gap-2">
+                  <span
+                    className="inline-block w-3 h-3 rounded-full"
+                    style={{ backgroundColor: userColors[i % userColors.length] }}
+                  />
+                  <span className="text-[#f5f5f5] font-semibold">{data.user}</span>
+                  <span className="text-[#708499] text-[10px]">({data.bankCodes.join(', ')})</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-[#f5f5f5] font-mono text-[11px]">
+                    {data.amount.toLocaleString('vi-VN')} ₫
+                  </span>
+                  <span className="text-[#64b5f6] font-bold min-w-[42px] text-right">
                     {data.percent.toFixed(1)}%
                   </span>
-                </div>
-                <div className="flex items-center justify-between mt-1 text-[10px] text-[#708499] pl-5">
-                  <span>{data.amount.toLocaleString('vi-VN')} ₫ · {data.depositCount} khoản</span>
-                  <span>{data.bankCodes.join(', ')}</span>
                 </div>
               </div>
             ))}
