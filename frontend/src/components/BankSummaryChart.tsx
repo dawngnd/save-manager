@@ -74,6 +74,15 @@ export const BankSummaryChart: React.FC<BankSummaryChartProps> = ({ deposits }) 
     const ctx = canvasRef.current.getContext('2d');
     if (!ctx) return;
 
+    // Set canvas size thủ công — responsive:false để Chart.js không co canvas về container
+    const canvasHeight = Math.max(200, bankData.length * 60);
+    const dpr = window.devicePixelRatio || 1;
+    canvasRef.current.width = calcWidth * dpr;
+    canvasRef.current.height = canvasHeight * dpr;
+    canvasRef.current.style.width = calcWidth + 'px';
+    canvasRef.current.style.height = canvasHeight + 'px';
+    ctx.scale(dpr, dpr);
+
     chartInstanceRef.current = new Chart(ctx, {
       type: 'bar',
       data: {
@@ -94,7 +103,7 @@ export const BankSummaryChart: React.FC<BankSummaryChartProps> = ({ deposits }) 
         ],
       },
       options: {
-        responsive: true,
+        responsive: false,
         maintainAspectRatio: false,
         plugins: {
           legend: {
@@ -205,7 +214,7 @@ export const BankSummaryChart: React.FC<BankSummaryChartProps> = ({ deposits }) 
             className="w-full overflow-x-auto overflow-y-hidden chart-scroll"
             style={{ WebkitOverflowScrolling: 'touch' }}
           >
-            <div style={{ width: chartWidth > 0 ? `${chartWidth}px` : '100%', height: `${Math.max(200, bankData.length * 60)}px` }}>
+            <div style={{ width: chartWidth > 0 ? `${chartWidth}px` : '100%' }}>
               <canvas ref={canvasRef} />
             </div>
           </div>

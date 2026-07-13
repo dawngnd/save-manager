@@ -94,6 +94,15 @@ export const GrowthChart: React.FC<GrowthChartProps> = ({ deposits }) => {
     const calcWidth = Math.max(data.length * 100, containerWidth);
     setChartWidth(calcWidth);
 
+    // Set canvas size thủ công — responsive:false để Chart.js không co canvas về container
+    const canvasHeight = 200;
+    const dpr = window.devicePixelRatio || 1;
+    canvasRef.current.width = calcWidth * dpr;
+    canvasRef.current.height = canvasHeight * dpr;
+    canvasRef.current.style.width = calcWidth + 'px';
+    canvasRef.current.style.height = canvasHeight + 'px';
+    ctx.scale(dpr, dpr);
+
     chartInstanceRef.current = new Chart(ctx, {
       plugins: [todayLinePlugin],
       type: 'line',
@@ -128,7 +137,7 @@ export const GrowthChart: React.FC<GrowthChartProps> = ({ deposits }) => {
         ]
       },
       options: {
-        responsive: true,
+        responsive: false,
         maintainAspectRatio: false,
         layout: {
           padding: { top: 16 }
@@ -260,7 +269,7 @@ export const GrowthChart: React.FC<GrowthChartProps> = ({ deposits }) => {
             className="w-full overflow-x-auto overflow-y-hidden chart-scroll"
             style={{ WebkitOverflowScrolling: 'touch' }}
           >
-            <div style={{ width: chartWidth > 0 ? `${chartWidth}px` : '100%', height: '200px' }}>
+            <div style={{ width: chartWidth > 0 ? `${chartWidth}px` : '100%' }}>
               <canvas ref={canvasRef} />
             </div>
           </div>

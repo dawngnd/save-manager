@@ -142,12 +142,22 @@ export const InterestRateChart: React.FC<InterestRateChartProps> = ({ deposits }
       chartInstanceRef.current.destroy();
     }
 
-    // Width: 80px per month, minimum 320px
-    const width = Math.max(320, chartData.months.length * 80);
+    // Width: 80px per month, minimum = container width
+    const containerWidth = scrollContainerRef.current?.clientWidth || 320;
+    const width = Math.max(containerWidth, chartData.months.length * 80);
     setChartWidth(width);
 
     const ctx = canvasRef.current.getContext('2d');
     if (!ctx) return;
+
+    // Set canvas size thủ công — responsive:false để Chart.js không co canvas về container
+    const canvasHeight = 200;
+    const dpr = window.devicePixelRatio || 1;
+    canvasRef.current.width = width * dpr;
+    canvasRef.current.height = canvasHeight * dpr;
+    canvasRef.current.style.width = width + 'px';
+    canvasRef.current.style.height = canvasHeight + 'px';
+    ctx.scale(dpr, dpr);
 
     chartInstanceRef.current = new Chart(ctx, {
       type: 'line',
@@ -168,7 +178,7 @@ export const InterestRateChart: React.FC<InterestRateChartProps> = ({ deposits }
         })),
       },
       options: {
-        responsive: true,
+        responsive: false,
         maintainAspectRatio: false,
         interaction: { mode: 'index', intersect: false },
         plugins: {
@@ -289,7 +299,7 @@ export const InterestRateChart: React.FC<InterestRateChartProps> = ({ deposits }
             className="w-full overflow-x-auto overflow-y-hidden chart-scroll"
             style={{ WebkitOverflowScrolling: 'touch' }}
           >
-            <div style={{ width: chartWidth > 0 ? `${chartWidth}px` : '100%', height: '200px' }}>
+            <div style={{ width: chartWidth > 0 ? `${chartWidth}px` : '100%' }}>
               <canvas ref={canvasRef} />
             </div>
           </div>
