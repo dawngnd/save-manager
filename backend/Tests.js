@@ -239,8 +239,15 @@ function testDepositRepositoryRollover() {
   assert(response.data.old_deposit.status === STATUS_ROLLED_OVER, 'Trạng thái cũ đổi sang rolled_over');
   assert(sheets._rawDeposits[0][DEP_COL_STATUS] === STATUS_ROLLED_OVER, 'Trạng thái dòng cũ trong sheet đổi');
 
+  // Kiểm tra child_id được lưu cho bản ghi cha (bug gốc: mock cũ chỉ handle col 4 → bỏ qua col 10)
+  assert(sheets._rawDeposits[0][DEP_COL_CHILD_ID] === response.data.new_deposit.id,
+    'child_id phải được lưu cho bản ghi cha. Got: ' + sheets._rawDeposits[0][DEP_COL_CHILD_ID]);
+  assert(response.data.old_deposit.child_id === response.data.new_deposit.id,
+    'Response phải chứa child_id trong old_deposit');
+
   assert(response.data.new_deposit.amount === 12000000, 'Số tiền mới khớp');
   assert(response.data.new_deposit.status === STATUS_ACTIVE, 'Trạng thái mới hoạt động');
+  assert(response.data.new_deposit.parent_id === 'dep-1', 'parent_id của khoản mới phải trỏ về khoản cũ');
   assert(sheets._rawDeposits.length === 2, 'Thêm 1 dòng mới vào sheet');
 }
 
