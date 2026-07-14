@@ -5,6 +5,7 @@
 // === TÊN SHEET ===
 const SHEET_USERS = 'Users';
 const SHEET_DEPOSITS = 'Deposits';
+const SHEET_GOLD = 'Gold';
 
 // === DEPOSITS: CHỈ SỐ CỘT (0-based, dùng khi truy cập mảng values[i][COL]) ===
 const DEP_COL_ID = 0;
@@ -27,10 +28,21 @@ const DEP_SHEET_COL_CHILD_ID = DEP_COL_CHILD_ID + 1;         // 10
 // === USERS: CHỈ SỐ CỘT (0-based) ===
 const USER_COL_BANKCODE = 0;
 const USER_COL_CHAT_ID = 1;
-const USER_TOTAL_COLUMNS = 2;
+const USER_COL_TYPE = 2;      // 'bank' | 'gold'
+const USER_COL_STATICS = 3;   // 1 = tính vào thống kê tổng, 0 = không
+const USER_TOTAL_COLUMNS = 4;
 
 // === USERS: SỐ THỨ TỰ CỘT TRONG SHEET (1-based) ===
 const USER_SHEET_COL_CHAT_ID = USER_COL_CHAT_ID + 1; // 2
+
+// === GOLD: CHỈ SỐ CỘT (0-based) ===
+const GOLD_COL_ID = 0;
+const GOLD_COL_PURCHASE_DATE = 1;
+const GOLD_COL_PRICE_PER_CHI = 2;  // Giá mua cho 1 chỉ (100g) tại thời điểm mua
+const GOLD_COL_QUANTITY_GRAM = 3;  // Số gram
+const GOLD_COL_USER_BANKCODE = 4;
+const GOLD_COL_PROVIDER = 5;       // Nhà cung cấp
+const GOLD_TOTAL_COLUMNS = 6;
 
 // === TRẠNG THÁI KHOẢN GỬI ===
 const STATUS_ACTIVE = 'active';
@@ -60,7 +72,13 @@ const DEPOSITS_HEADERS = [
   'id', 'amount', 'interest_rate', 'status', 'expected_interest',
   'created_at', 'maturity_at', 'user_bankcode', 'parent_id', 'child_id'
 ];
-const USERS_HEADERS = ['username_bankcode', 'telegram_chat_id'];
+const USERS_HEADERS = ['username_bankcode', 'telegram_chat_id', 'type', 'statics'];
+const GOLD_HEADERS = ['id', 'purchase_date', 'price_per_chi', 'quantity_gram', 'user_bankcode', 'provider'];
+
+// === GIÁ VÀNG ===
+const GOLD_API_URL = 'https://www.vang.today/api/prices?type=SJL1L10';
+const PROP_GOLD_PRICE_CACHE = 'GOLD_PRICE_CACHE';     // Cache giá vàng (JSON: {price, updatedAt})
+const GOLD_DEFAULT_GRAM = 100;  // 1 chỉ = 100g
 
 // === TELEGRAM ===
 const TELEGRAM_API_BASE = 'https://api.telegram.org/bot';

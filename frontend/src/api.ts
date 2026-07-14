@@ -45,3 +45,11 @@ export async function callBackendApi<T = any>(payload: Omit<ApiPayload, 'initDat
   }
   return result.data as T;
 }
+
+/**
+ * Lấy giá vàng hiện tại từ backend (có cache).
+ * @param forceRefresh Bỏ qua cache, gọi API mới
+ */
+export async function getGoldPrice(forceRefresh = false) {
+  return callBackendApi({ action: 'get_gold_price', force_refresh: forceRefresh });
+}

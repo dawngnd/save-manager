@@ -94,8 +94,20 @@ function doPost(e) {
       return DepositRepository.getAll(sheets, payload, authenticatedChatId);
     }
 
+    // Yêu cầu chỉ đọc: bản ghi vàng
+    if (action === 'get_golds') {
+      var sheets = SheetManager.initializeSheets();
+      return GoldRepository.getAll(sheets);
+    }
+
+    // Lấy giá vàng (có thể force refresh)
+    if (action === 'get_gold_price') {
+      var forceRefresh = payload.force_refresh === true;
+      return GoldRepository.getCurrentPrice(forceRefresh);
+    }
+
     // Yêu cầu ghi: Cần sử dụng LockService bảo vệ dữ liệu chống race condition
-    if (action === 'add_deposit' || action === 'rollover_deposit') {
+    if (action === 'add_deposit' || action === 'rollover_deposit' || action === 'add_gold') {
       return handleWriteActionWithLock(action, payload, authenticatedChatId);
     }
 
@@ -134,6 +146,8 @@ function handleWriteActionWithLock(action, payload, authenticatedChatId) {
       return DepositRepository.add(sheets, payload);
     } else if (action === 'rollover_deposit') {
       return DepositRepository.rollover(sheets, payload, authenticatedChatId);
+    } else if (action === 'add_gold') {
+      return GoldRepository.add(sheets, payload);
     }
 
   } catch (err) {
