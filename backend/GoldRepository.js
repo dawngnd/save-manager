@@ -120,8 +120,8 @@ class GoldRepository {
         throw new Error('Dữ liệu API không hợp lệ.');
       }
 
-      // Giá sell là giá cho 1 lượng, chia 100 để ra giá 1 chỉ (100g)
-      var pricePerChi = Math.round(item.sell / 100);
+      // Giá sell là giá cho 1 lượng, chia 10 để ra giá 1 chỉ (1 lượng = 10 chỉ)
+      var pricePerChi = Math.round(item.sell / 10);
       var result = {
         price_per_chi: pricePerChi,
         updated_at: new Date().toISOString()
