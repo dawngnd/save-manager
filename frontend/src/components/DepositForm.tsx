@@ -328,8 +328,8 @@ export const DepositForm: React.FC<DepositFormProps> = ({
                 className="w-full bg-[#17212b] border border-[#2c3847] focus:border-[#5288c1] rounded-xl px-4 py-3 text-[#f5f5f5] focus:outline-none transition appearance-none cursor-pointer"
               >
                 <option value="" disabled>-- Chọn tài khoản --</option>
-                {users.map((u) => (
-                  <option key={u} value={u}>{u}</option>
+                {users.filter(u => !u.type || u.type === 'bank').map((u) => (
+                  <option key={u.username_bankcode} value={u.username_bankcode}>{u.username_bankcode}</option>
                 ))}
               </select>
             </div>

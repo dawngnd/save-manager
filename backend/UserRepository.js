@@ -71,10 +71,15 @@ class UserRepository {
     var result = [];
 
     if (lastRow > HEADER_ROW) {
-      var values = usersSheet.getRange(DATA_START_ROW, 1, lastRow - 1, 1).getValues();
+      var values = usersSheet.getRange(DATA_START_ROW, 1, lastRow - 1, USER_TOTAL_COLUMNS).getValues();
       for (var i = 0; i < values.length; i++) {
         if (values[i][USER_COL_BANKCODE]) {
-          result.push(values[i][USER_COL_BANKCODE]);
+          result.push({
+            username_bankcode: values[i][USER_COL_BANKCODE],
+            telegram_chat_id: values[i][USER_COL_CHAT_ID] || '',
+            type: values[i][USER_COL_TYPE] || '',
+            statics: values[i][USER_COL_STATICS] !== '' ? Number(values[i][USER_COL_STATICS]) : 1
+          });
         }
       }
     }

@@ -1,15 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import { callBackendApi } from '../api';
+import { User } from '../types';
 
 const CACHE_KEY = 'save_manager_users_cache';
 const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 giờ
 
 interface CachedData {
-  users: string[];
+  users: User[];
   timestamp: number;
 }
 
-function readCache(): string[] | null {
+function readCache(): User[] | null {
   try {
     const raw = localStorage.getItem(CACHE_KEY);
     if (!raw) return null;
@@ -24,13 +25,13 @@ function readCache(): string[] | null {
   }
 }
 
-function writeCache(users: string[]) {
+function writeCache(users: User[]) {
   const data: CachedData = { users, timestamp: Date.now() };
   localStorage.setItem(CACHE_KEY, JSON.stringify(data));
 }
 
 export function useUsersCache() {
-  const [users, setUsers] = useState<string[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
 
   const fetchUsers = useCallback(async (forceRefresh = false) => {
@@ -44,7 +45,7 @@ export function useUsersCache() {
 
     try {
       setLoading(true);
-      const data = await callBackendApi<string[]>({ action: 'get_users' });
+      const data = await callBackendApi<User[]>({ action: 'get_users' });
       setUsers(data);
       writeCache(data);
     } catch (err) {
