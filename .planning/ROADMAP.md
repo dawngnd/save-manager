@@ -1,132 +1,41 @@
 # Roadmap: Save Manager
 
-## Overview
+## Milestones
 
-Save Manager is a lightweight personal savings tracking system built on top of Google Apps Script, Google Sheets, and Telegram Mini Apps. The development journey proceeds from the foundation of setting up the Google Sheet database and the clasp development environment, building out the backend REST APIs and calculations, setting up the Telegram Bot webhook and maturity alerts, implementing the responsive frontend user interface with user authentication, and finally integrating the growth charts and savings rollover operations.
+- ✅ **v1.0 MVP** — Phases 1-5 (shipped 2026-07-14)
+- 🚧 **v2.0 Extension** — Phases 6-8 (planned)
 
 ## Phases
 
-**Phase Numbering:**
+<details>
+<summary>✅ v1.0 MVP (Phases 1-5) — SHIPPED 2026-07-14</summary>
 
-- Integer phases (1, 2, 3): Planned milestone work
-- Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
-
-- [x] **Phase 1: DB & clasp Project Setup** - Setup Google Sheets database schema and local clasp synchronization.
+- [x] **Phase 1: DB & clasp Project Setup** - Setup Google Sheets database schema and local clasp synchronization. (completed 2026-07-10)
 - [x] **Phase 2: Backend DB Operations & Calculations** - Build backend CRUD functions, LockService guards, and expected interest calculations. (completed 2026-07-10)
-- [ ] **Phase 3: Telegram Bot Webhook Integration** - Connect Telegram Bot API webhooks and set up daily maturity alerts cron job.
-- [ ] **Phase 4: Frontend UI (TWA) & Auth** - Create the single-file Vite/TS/Tailwind SPA with Telegram Apps SDK integration and deposit forms.
-- [x] **Phase 5: Charts & Rollover Mechanics** - Build growth projection timeseries chart and execute rollover transaction workflow.
+- [x] **Phase 3: Telegram Bot Webhook Integration** - Connect Telegram Bot API webhooks and set up daily maturity alerts cron job. (completed 2026-07-10)
+- [x] **Phase 4: Frontend UI (TWA) & Auth** - Create the single-file Vite/TS/Tailwind SPA with Telegram Apps SDK integration and deposit forms. (completed 2026-07-10)
+- [x] **Phase 5: Charts & Rollover Mechanics** - Build growth projection timeseries chart and execute rollover transaction workflow. (completed 2026-07-10)
 
-## Phase Details
+</details>
 
-### Phase 1: DB & clasp Project Setup
+### 🚧 v2.0 Extension (Planned)
 
-**Goal**: Setup Google Sheets database schema and configure local clasp development synchronization.
-**Depends on**: Nothing (first phase)
-**Requirements**: DB-01, API-03
-**Success Criteria** (what must be TRUE):
-
-  1. Google Sheet database exists with correct columns on both `Users` and `Deposits` sheets.
-  2. Local code changes can be pushed to the GAS project via `clasp push` and run in GAS execution environment.
-  3. Timezone settings in `appsscript.json` and the Google Sheet are set to `Asia/Ho_Chi_Minh`.
-
-**Plans**: 2 plans
-
-Plans:
-
-- [x] 01-01: Setup Google Sheet database schema and timezone configurations
-- [x] 01-02: Configure clasp development environment and basic doGet test script
-
-### Phase 2: Backend DB Operations & Calculations
-
-**Goal**: Develop server-side GAS operations for adding deposits and reading user data with concurrency guards and interest calculation.
-**Depends on**: Phase 1
-**Requirements**: DB-02, API-01, API-02
-**Success Criteria** (what must be TRUE):
-
-  1. REST call to Web App `doPost` returns correct JSON list of savings when queried for a user.
-  2. Adding a deposit via `doPost` creates a row in the `Deposits` sheet with auto-calculated expected interest based on the formulas.
-  3. Concurrency test with simulated simultaneous writes executes sequentially without row overwrite errors using `LockService`.
-
-**Plans**: 2/2 plans complete
-
-Plans:
-
-- [x] 02-01-PLAN.md — Implement database operations (read/write deposits) and calculations in Apps Script
-- [x] 02-02-PLAN.md — Build doPost endpoint controller with LockService concurrency guards
-
-### Phase 3: Telegram Bot Webhook Integration
-
-**Goal**: Integrate Telegram Bot webhook to handle bot commands and daily trigger for deposit maturity alerts.
-**Depends on**: Phase 2
-**Requirements**: BOT-01, NOTF-01
-**Success Criteria** (what must be TRUE):
-
-  1. Sending `/start` to the Telegram Bot returns a message with a custom keyboard button that opens the Web App URL.
-  2. A daily cron job trigger in GAS runs, scans for deposits maturing in <= 3 days, and successfully sends alert messages to the user via Telegram Bot API.
-
-**Plans**: 2 plans
-
-Plans:
-
-- [x] 03-01: Establish Telegram Bot webhook connection and `/start` command response
-- [ ] 03-02: Implement daily cron job trigger in GAS for deposit maturity checks and alerts
-
-### Phase 4: Frontend UI (TWA) & Auth
-
-**Goal**: Build Vite SPA inlined into a single file, integrated with the Telegram Apps SDK, featuring user authentication and the deposit list / creation form.
-**Depends on**: Phase 3
-**Requirements**: UI-01, UI-02, UI-03, DEP-01
-**Success Criteria** (what must be TRUE):
-
-  1. Compiled Web App displays correctly inside the Telegram Web App container, matching the dark/light theme of Telegram automatically.
-  2. User can view their list of active deposits on the screen after typing in their `username_bankcode` to authenticate.
-  3. User can fill in the "New Deposit" form and see the newly created deposit immediately added to their list.
-
-**Plans**: 3 plans
-
-Plans:
-**Wave 1**
-
-- [x] 04-01: Scaffold Vite + TS + Tailwind SPA and configure vite-plugin-singlefile bundler
-
-**Wave 2** *(blocked on Wave 1 completion)*
-
-- [x] 04-02: Integrate @telegram-apps/sdk and implement basic login/configuration screen
-
-**Wave 3** *(blocked on Wave 2 completion)*
-
-- [x] 04-03: Create active deposit list view and add deposit interactive form
-
-### Phase 5: Charts & Rollover Mechanics
-
-**Goal**: Build rollover interaction and projection chart to show timeseries asset growth.
-**Depends on**: Phase 4
-**Requirements**: STAT-01, DEP-02
-**Success Criteria** (what must be TRUE):
-
-  1. User can click a "Rollover" button on a matured deposit, input a new principal amount, and verify that the old deposit status changes to `rolled_over` while a new deposit is created.
-  2. User can see a timeseries growth chart on their dashboard showing expected assets growth (principal + interest) over time based on the active deposits.
-
-**Plans**: 1/2 plans executed
-
-Plans:
-
-- [x] 05-01-PLAN.md
-- [x] 05-02-PLAN.md
-
-- [x] 05-01: Implement rollover transaction logic in both backend and frontend UI
-- [x] 05-02: Integrate Chart.js and build asset growth timeseries projection dashboard
+- [ ] **Phase 6: Hotfixes & Integration Gaps** - Resolve UserSelector integration, username-bankcode API mapping, and custom text inputs in DepositForm.
+- [ ] **Phase 7: WebApp Security & Rollover History** - Add full HMAC signatures validation on backend, and visual lineage tree for deposit history.
+- [ ] **Phase 8: Savings Distribution Analyser** - Visual graphs to show savings distribution by interest rate, bank, and duration.
 
 ## Progress
 
-**Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
+Execution Order:
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 
-| Phase | Plans Complete | Status | Completed |
-|-------|----------------|--------|-----------|
-| 1. DB & clasp Project Setup | 2/2 | Complete    | 2026-07-10 |
-| 2. Backend DB Operations & Calculations | 2/2 | Complete    | 2026-07-10 |
-| 3. Telegram Bot Webhook Integration | 2/2 | Complete    | 2026-07-10 |
-| 4. Frontend UI (TWA) & Auth | 3/3 | Complete    | 2026-07-10 |
-| 5. Charts & Rollover Mechanics | 2/2 | Complete | 2026-07-10 |
+| Phase | Milestone | Plans Complete | Status | Completed |
+|-------|-----------|----------------|--------|-----------|
+| 1. DB & clasp Project Setup | v1.0 | 2/2 | Complete | 2026-07-10 |
+| 2. Backend DB Operations & Calculations | v1.0 | 2/2 | Complete | 2026-07-10 |
+| 3. Telegram Bot Webhook Integration | v1.0 | 2/2 | Complete | 2026-07-10 |
+| 4. Frontend UI (TWA) & Auth | v1.0 | 3/3 | Complete | 2026-07-10 |
+| 5. Charts & Rollover Mechanics | v1.0 | 2/2 | Complete | 2026-07-10 |
+| 6. Hotfixes & Integration Gaps | v2.0 | 0/2 | Not started | — |
+| 7. WebApp Security & Rollover History | v2.0 | 0/2 | Not started | — |
+| 8. Savings Distribution Analyser | v2.0 | 0/1 | Not started | — |

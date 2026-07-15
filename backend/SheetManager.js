@@ -17,8 +17,8 @@ class SheetManager {
   }
 
   /**
-   * Khởi tạo các sheet Users và Deposits với header tương ứng nếu chưa tồn tại.
-   * @returns {{users: GoogleAppsScript.Spreadsheet.Sheet, deposits: GoogleAppsScript.Spreadsheet.Sheet}}
+   * Khởi tạo các sheet Users, Deposits và Gold với header tương ứng nếu chưa tồn tại.
+   * @returns {{users: GoogleAppsScript.Spreadsheet.Sheet, deposits: GoogleAppsScript.Spreadsheet.Sheet, gold: GoogleAppsScript.Spreadsheet.Sheet}}
    */
   static initializeSheets() {
     const ss = SheetManager.getSpreadsheet();
@@ -32,6 +32,9 @@ class SheetManager {
       usersSheet.getRange(HEADER_ROW, 1, 1, USERS_HEADERS.length).setValues([USERS_HEADERS]);
     }
 
+    // Seed bản ghi vàng mặc định nếu chưa có
+    SheetManager.seedGoldUsers(usersSheet);
+
     // Khởi tạo sheet Deposits
     let depositsSheet = ss.getSheetByName(SHEET_DEPOSITS);
     if (!depositsSheet) {
@@ -41,11 +44,46 @@ class SheetManager {
       depositsSheet.getRange(HEADER_ROW, 1, 1, DEPOSITS_HEADERS.length).setValues([DEPOSITS_HEADERS]);
     }
 
+    // Khởi tạo sheet Gold
+    let goldSheet = ss.getSheetByName(SHEET_GOLD);
+    if (!goldSheet) {
+      goldSheet = ss.insertSheet(SHEET_GOLD);
+    }
+    if (goldSheet.getLastRow() === 0 || SheetManager.isHeaderEmpty(goldSheet, GOLD_HEADERS.length)) {
+      goldSheet.getRange(HEADER_ROW, 1, 1, GOLD_HEADERS.length).setValues([GOLD_HEADERS]);
+    }
+
     Logger.log('Initialization of sheets completed successfully.');
     return {
       users: usersSheet,
-      deposits: depositsSheet
+      deposits: depositsSheet,
+      gold: goldSheet
     };
+  }
+
+  /**
+   * Seed bản ghi vàng mặc định vào bảng Users nếu chưa tồn tại.
+   * @param {GoogleAppsScript.Spreadsheet.Sheet} usersSheet
+   */
+  static seedGoldUsers(usersSheet) {
+    const goldUsers = [
+      ['Dang-Gold', '', 'gold', 1],
+      ['Nam-Gold',  '', 'gold', 0],
+    ];
+
+    const lastRow = usersSheet.getLastRow();
+    var existingBankcodes = [];
+    if (lastRow > HEADER_ROW) {
+      const vals = usersSheet.getRange(DATA_START_ROW, 1, lastRow - 1, 1).getValues();
+      existingBankcodes = vals.map(function(r) { return r[0]; });
+    }
+
+    goldUsers.forEach(function(row) {
+      if (existingBankcodes.indexOf(row[0]) === -1) {
+        usersSheet.appendRow(row);
+        Logger.log('Seeded gold user: ' + row[0]);
+      }
+    });
   }
 
   /**
