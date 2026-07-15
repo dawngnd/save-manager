@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { callBackendApi } from '../api';
+import { User } from '../types';
 
 interface UserSelectorProps {
   onSelectUser: (username: string) => void;
 }
 
 export const UserSelector: React.FC<UserSelectorProps> = ({ onSelectUser }) => {
-  const [users, setUsers] = useState<string[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [selectedUser, setSelectedUser] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -16,10 +17,12 @@ export const UserSelector: React.FC<UserSelectorProps> = ({ onSelectUser }) => {
       try {
         setLoading(true);
         setError(null);
-        const data = await callBackendApi<string[]>({ action: 'get_users' });
-        setUsers(data);
-        if (data.length > 0) {
-          setSelectedUser(data[0]);
+        const data = await callBackendApi<User[]>({ action: 'get_users' });
+        // Filter out gold users
+        const bankUsers = data.filter(u => !u.type || u.type === 'bank');
+        setUsers(bankUsers);
+        if (bankUsers.length > 0) {
+          setSelectedUser(bankUsers[0].username_bankcode);
         }
       } catch (err: any) {
         console.error('Failed to fetch users:', err);
@@ -83,9 +86,9 @@ export const UserSelector: React.FC<UserSelectorProps> = ({ onSelectUser }) => {
                   onChange={(e) => setSelectedUser(e.target.value)}
                   className="w-full bg-[#17212b] border border-[#2c3847] focus:border-[#5288c1] rounded-xl px-4 py-3 text-sm text-[#f5f5f5] appearance-none focus:outline-none transition cursor-pointer"
                 >
-                  {users.map((username) => (
-                    <option key={username} value={username}>
-                      {username}
+                  {users.map((u) => (
+                    <option key={u.username_bankcode} value={u.username_bankcode}>
+                      {u.username_bankcode}
                     </option>
                   ))}
                 </select>

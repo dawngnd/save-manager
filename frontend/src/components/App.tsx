@@ -260,7 +260,7 @@ export const App: React.FC = () => {
             <div className="bg-[#0e1621] border border-[#f5a623]/20 rounded-2xl p-4 space-y-3">
               <div className="flex justify-between items-center">
                 <div>
-                  <div className="text-[10px] text-[#708499] uppercase tracking-wider font-semibold">Giá vàng SJC (1 chỉ)</div>
+                  <div className="text-[10px] text-[#708499] uppercase tracking-wider font-semibold">Giá vàng BTMH (1 chỉ)</div>
                   {goldPrice ? (
                     <div className="text-xl font-bold text-[#f5a623]">
                       {goldPrice.price_per_chi.toLocaleString('vi-VN')} ₫

@@ -13,8 +13,8 @@ interface GoldFormProps {
 export const GoldForm: React.FC<GoldFormProps> = ({ isOpen, onClose, onSuccess }) => {
   const { users, loading: usersLoading } = useUsersCache();
 
-  // users là string[], lọc những bankcode có suffix '-Gold'
-  const goldUsers = users.filter(u => u.toLowerCase().includes('gold'));
+  // Lọc những user có type === 'gold'
+  const goldUsers = users.filter(u => u.type === 'gold');
 
   const [userBankcode, setUserBankcode]   = useState('');
   const [purchaseDate, setPurchaseDate]   = useState('');
@@ -106,7 +106,7 @@ export const GoldForm: React.FC<GoldFormProps> = ({ isOpen, onClose, onSuccess }
             >
               <option value="">Chọn chủ sở hữu...</option>
               {(goldUsers.length > 0 ? goldUsers : users).map(u => (
-                <option key={u} value={u}>{u}</option>
+                <option key={u.username_bankcode} value={u.username_bankcode}>{u.username_bankcode}</option>
               ))}
             </select>
           )}
