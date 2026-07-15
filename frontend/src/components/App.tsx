@@ -40,6 +40,28 @@ export const App: React.FC = () => {
   const [goldPriceLoading, setGoldPriceLoading] = useState(false);
   const [goldPriceError, setGoldPriceError]     = useState<string | null>(null);
 
+  const GOLD_PRICE_CACHE_KEY = 'save_manager_gold_price_cache';
+  const GOLD_PRICE_CACHE_TTL = 24 * 60 * 60 * 1000; // 1 ngày
+
+  const readGoldPriceCache = (): GoldPrice | null => {
+    try {
+      const raw = localStorage.getItem(GOLD_PRICE_CACHE_KEY);
+      if (!raw) return null;
+      const cached = JSON.parse(raw);
+      if (Date.now() - new Date(cached.updated_at).getTime() > GOLD_PRICE_CACHE_TTL) {
+        localStorage.removeItem(GOLD_PRICE_CACHE_KEY);
+        return null;
+      }
+      return cached;
+    } catch {
+      return null;
+    }
+  };
+
+  const writeGoldPriceCache = (price: GoldPrice) => {
+    localStorage.setItem(GOLD_PRICE_CACHE_KEY, JSON.stringify(price));
+  };
+
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
     const viewParam = searchParams.get('view');
@@ -63,6 +85,7 @@ export const App: React.FC = () => {
     try {
       const data = await getGoldPrice(forceRefresh);
       setGoldPrice(data as GoldPrice);
+      writeGoldPriceCache(data as GoldPrice);
     } catch (err: any) {
       setGoldPriceError(err.message || 'Không thể lấy giá vàng.');
     } finally {
@@ -70,10 +93,15 @@ export const App: React.FC = () => {
     }
   };
 
-  // Auto-load giá vàng khi chuyển sang tab Vàng
+  // Auto-load giá vàng khi chuyển sang tab Vàng (ưu tiên cache)
   useEffect(() => {
     if (activeTab === 'gold' && !goldPrice && !goldPriceLoading) {
-      handleRefreshGoldPrice(false);
+      const cached = readGoldPriceCache();
+      if (cached) {
+        setGoldPrice(cached);
+      } else {
+        handleRefreshGoldPrice(false);
+      }
     }
   }, [activeTab]);
 
