@@ -41,7 +41,7 @@ export const App: React.FC = () => {
   const [goldPriceError, setGoldPriceError]     = useState<string | null>(null);
 
   const GOLD_PRICE_CACHE_KEY = 'save_manager_gold_price_cache';
-  const GOLD_PRICE_CACHE_TTL = 30 * 60 * 1000; // 30 phút
+  const GOLD_PRICE_CACHE_TTL = 24 * 60 * 60 * 1000; // 1 ngày
 
   const readGoldPriceCache = (): GoldPrice | null => {
     try {
