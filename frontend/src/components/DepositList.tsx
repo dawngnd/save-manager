@@ -9,8 +9,11 @@ interface DepositListProps {
   onTriggerRollover: (deposit: Deposit) => void;
 }
 
+type SortOption = 'maturity_at' | 'amount' | 'expected_interest' | 'actual_interest';
+
 export const DepositList: React.FC<DepositListProps> = ({ deposits, onTriggerRollover }) => {
   const [selectedDeposit, setSelectedDeposit] = useState<Deposit | null>(null);
+  const [sortBy, setSortBy] = useState<SortOption>('maturity_at');
 
   const formatCurrency = (value: number) => {
     return value.toLocaleString('vi-VN') + ' ₫';
@@ -119,6 +122,18 @@ export const DepositList: React.FC<DepositListProps> = ({ deposits, onTriggerRol
         return true;
       })
       .sort((a, b) => {
+        if (sortBy === 'amount') {
+          return b.amount - a.amount;
+        }
+        if (sortBy === 'expected_interest') {
+          return b.expected_interest - a.expected_interest;
+        }
+        if (sortBy === 'actual_interest') {
+          const interestA = getActualInterest(a) ?? 0;
+          const interestB = getActualInterest(b) ?? 0;
+          return interestB - interestA;
+        }
+        // Mặc định: maturity_at
         try {
           const dateA = parseClientDateString(a.maturity_at).getTime();
           const dateB = parseClientDateString(b.maturity_at).getTime();
@@ -161,28 +176,47 @@ export const DepositList: React.FC<DepositListProps> = ({ deposits, onTriggerRol
         })}
       </div>
 
-      {/* Bank Filter */}
-      {banksInCurrentStatus.length > 1 && (
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] text-[#708499] whitespace-nowrap">🏦</span>
+      {/* Filters & Sort Controls */}
+      <div className="flex flex-col sm:flex-row gap-2">
+        {/* Bank Filter */}
+        {banksInCurrentStatus.length > 1 && (
+          <div className="flex-1 flex items-center gap-2">
+            <span className="text-[10px] text-[#708499] whitespace-nowrap">🏦</span>
+            <select
+              value={bankFilter}
+              onChange={(e) => setBankFilter(e.target.value)}
+              className="flex-1 px-3 py-1.5 text-xs font-semibold bg-[#17212b] text-[#f5f5f5] border border-[#2c3847] rounded-lg focus:border-[#5288c1]/40 outline-none cursor-pointer appearance-none"
+              style={{ backgroundImage: 'url("data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%23708499\'%3e%3cpath d=\'M7 10l5 5 5-5z\'/%3e%3c/svg%3e")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center', backgroundSize: '16px', paddingRight: '28px' }}
+            >
+              <option value="all">Tất cả tài khoản ({banksInCurrentStatus.length})</option>
+              {banksInCurrentStatus.map(bank => {
+                const count = deposits.filter(d => 
+                  d.user_bankcode === bank && (statusFilter === 'all' || getEffectiveStatus(d) === statusFilter)
+                ).length;
+                return (
+                  <option key={bank} value={bank}>{bank} ({count})</option>
+                );
+              })}
+            </select>
+          </div>
+        )}
+
+        {/* Sort Filter */}
+        <div className="flex-1 flex items-center gap-2">
+          <span className="text-[10px] text-[#708499] whitespace-nowrap">↕️</span>
           <select
-            value={bankFilter}
-            onChange={(e) => setBankFilter(e.target.value)}
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as SortOption)}
             className="flex-1 px-3 py-1.5 text-xs font-semibold bg-[#17212b] text-[#f5f5f5] border border-[#2c3847] rounded-lg focus:border-[#5288c1]/40 outline-none cursor-pointer appearance-none"
             style={{ backgroundImage: 'url("data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%23708499\'%3e%3cpath d=\'M7 10l5 5 5-5z\'/%3e%3c/svg%3e")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center', backgroundSize: '16px', paddingRight: '28px' }}
           >
-            <option value="all">Tất cả tài khoản ({banksInCurrentStatus.length})</option>
-            {banksInCurrentStatus.map(bank => {
-              const count = deposits.filter(d => 
-                d.user_bankcode === bank && (statusFilter === 'all' || getEffectiveStatus(d) === statusFilter)
-              ).length;
-              return (
-                <option key={bank} value={bank}>{bank} ({count})</option>
-              );
-            })}
+            <option value="maturity_at">📅 Đáo hạn (Tăng dần)</option>
+            <option value="amount">💰 Tiền gốc (Giảm dần)</option>
+            <option value="expected_interest">📈 Lãi dự kiến (Giảm dần)</option>
+            <option value="actual_interest">💵 Lãi thực tế (Giảm dần)</option>
           </select>
         </div>
-      )}
+      </div>
 
       {filteredDeposits.length === 0 ? (
         <div className="text-center py-12 px-4 bg-[#0e1621] border border-[#2b394a] rounded-2xl space-y-3">
