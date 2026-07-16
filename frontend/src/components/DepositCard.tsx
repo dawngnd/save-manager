@@ -49,10 +49,16 @@ export const DepositCard: React.FC<DepositCardProps> = ({ deposit, actualInteres
         <div className="space-y-1">
           <div className="text-xs text-[#708499] font-medium uppercase tracking-wider">{deposit.user_bankcode}</div>
           <div className="text-lg font-bold text-[#f5f5f5]">{formatCurrency(deposit.amount)}</div>
-          {actualInterest != null && (
-            <div className={`text-xs font-semibold ${actualInterest >= 0 ? 'text-emerald-400' : 'text-[#ff4d4d]'}`}>
-              {actualInterest >= 0 ? '+' : ''}{formatCurrency(actualInterest)} lãi thực
+          {deposit.status === 'active' ? (
+            <div className="text-xs font-semibold text-[#ff9f1a]">
+              +{formatCurrency(deposit.expected_interest)} dự kiến
             </div>
+          ) : (
+            actualInterest != null && (
+              <div className={`text-xs font-semibold ${actualInterest >= 0 ? 'text-emerald-400' : 'text-[#ff4d4d]'}`}>
+                {actualInterest >= 0 ? '+' : ''}{formatCurrency(actualInterest)} lãi thực
+              </div>
+            )
           )}
         </div>
         <div className={`px-2.5 py-1 text-xs font-semibold rounded-lg border ${statusColorClass}`}>
