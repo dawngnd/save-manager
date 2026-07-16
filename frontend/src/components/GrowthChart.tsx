@@ -216,7 +216,7 @@ export const GrowthChart: React.FC<GrowthChartProps> = ({ deposits }) => {
         chartInstanceRef.current = null;
       }
     };
-  }, [isCollapsed, deposits, data.length]);
+  }, [isCollapsed, deposits, data.length, chartWidth]);
 
   if (data.length === 0) {
     return (
