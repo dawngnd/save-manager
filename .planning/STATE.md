@@ -118,6 +118,7 @@ Resume file: None
 | Quick ID | Date | Description | Status |
 |----------|------|-------------|--------|
 | 260716-dpa | 2026-07-16 | Sửa lỗi biểu đồ tăng trưởng trên mobile và thêm sort dropdown cho danh sách tiết kiệm | complete ✓ |
+| 260716-dx5 | 2026-07-16 | Hiển thị lãi dự kiến màu vàng cho khoản tiết kiệm active trên card | complete ✓ |
 
 ## Operator Next Steps
 
