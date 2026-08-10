@@ -9,7 +9,7 @@ export interface Deposit {
   id: string;
   amount: number;
   interest_rate: number;
-  status: 'active' | 'matured' | 'rolled_over';
+  status: 'active' | 'matured' | 'rolled_over' | 'withdrawn';
   expected_interest: number;
   created_at: string; // format: DD/MM/YYYY
   maturity_at: string; // format: DD/MM/YYYY
