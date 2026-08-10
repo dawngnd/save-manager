@@ -390,7 +390,12 @@ export function generateStepWiseGrowthData(deposits: Deposit[]): ChartDataPoint[
     const yyyy = cursor.getFullYear();
     const dateStr = `${mm}/${yyyy}`;
 
-    const { principal, interest, baseline } = computeTotalAt(cursor);
+    // Dùng ngày cuối tháng làm mốc tính (thay vì ngày đầu tháng)
+    // để deposit tạo/đáo hạn giữa tháng đều được tính vào tháng đó
+    const lastDayOfMonth = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0);
+    const targetDate = lastDayOfMonth > endDate ? endDate : lastDayOfMonth;
+
+    const { principal, interest, baseline } = computeTotalAt(targetDate);
     dataPoints.push({
       date: dateStr,
       total: principal + interest,
