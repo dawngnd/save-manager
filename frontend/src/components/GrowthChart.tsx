@@ -339,6 +339,7 @@ export function generateStepWiseGrowthData(deposits: Deposit[]): ChartDataPoint[
     let baseline = 0;
 
     chains.forEach(chain => {
+      const lastInChain = chain[chain.length - 1];
       let activeDep: Deposit | null = null;
       for (const dep of chain) {
         try {
@@ -349,7 +350,12 @@ export function generateStepWiseGrowthData(deposits: Deposit[]): ChartDataPoint[
         } catch { /* skip */ }
       }
 
-      if (activeDep && activeDep.status !== 'rolled_over' && activeDep.status !== 'withdrawn') {
+      // Skip chỉ khi deposit cuối chain có status terminal (rolled_over/withdrawn)
+      // và activeDep chính là deposit cuối đó — nghĩa là khoản này đã bị rút/đổi tay.
+      // Deposit rolled_over ở giữa chain vẫn tính vì tại thời điểm T nó vẫn đang active.
+      const isTerminalAndLast = activeDep === lastInChain
+        && (lastInChain.status === 'rolled_over' || lastInChain.status === 'withdrawn');
+      if (activeDep && !isTerminalAndLast) {
         principal += activeDep.amount;
         try {
           const matDate = parseClientDateString(activeDep.maturity_at);
@@ -360,10 +366,12 @@ export function generateStepWiseGrowthData(deposits: Deposit[]): ChartDataPoint[
       }
 
       // Baseline: lũy kế amount của các khoản gốc (no parent) đã được tạo tại thời điểm này
+      // Cũng skip nếu chain đã bị terminal (rút/đổi tay manual)
+      const isChainTerminal = lastInChain.status === 'rolled_over' || lastInChain.status === 'withdrawn';
       const origin = chain[0]; // khoản gốc luôn ở đầu chain
       try {
         const originDate = parseClientDateString(origin.created_at);
-        if (originDate <= targetDate) {
+        if (originDate <= targetDate && !isChainTerminal) {
           baseline += origin.amount;
         }
       } catch { /* skip */ }
