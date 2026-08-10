@@ -96,7 +96,8 @@ class DepositRepository {
       depositId, amount, interestRate, STATUS_ACTIVE, expectedInterest,
       data.created_at, data.maturity_at, usernameBankcode,
       '', // parent_id
-      ''  // child_id
+      '', // child_id
+      ''  // note
     ];
 
     var newLastRow = sheets.deposits.getLastRow() + 1;
@@ -190,7 +191,8 @@ class DepositRepository {
       newDepositId, newAmount, newInterestRate, STATUS_ACTIVE, newExpectedInterest,
       createdAt, maturityAt, oldDepositData.user_bankcode,
       oldDepositId, // parent_id
-      ''            // child_id (chưa có)
+      '',           // child_id (chưa có)
+      ''            // note
     ];
 
     var newLastRow = depositsSheet.getLastRow() + 1;
