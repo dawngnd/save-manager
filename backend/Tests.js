@@ -183,8 +183,8 @@ function testExpectedInterestCalculation() {
 function testDepositRepositoryGetAll() {
   Logger.log('Chạy: testDepositRepositoryGetAll');
   var sheets = createMockSheets();
-  sheets.deposits.appendRow(['dep-1', 10000000, 6.0, STATUS_ACTIVE, 600000, '10/07/2026', '10/07/2027', 'user1_vcb', '', '']);
-  sheets.deposits.appendRow(['dep-2', 5000000, 5.0, STATUS_ACTIVE, 250000, '11/07/2026', '11/07/2027', 'user2_tcb', '', '']);
+  sheets.deposits.appendRow(['dep-1', 10000000, 6.0, STATUS_ACTIVE, 600000, '10/07/2026', '10/07/2027', 'user1_vcb', '', '', '']);
+  sheets.deposits.appendRow(['dep-2', 5000000, 5.0, STATUS_ACTIVE, 250000, '11/07/2026', '11/07/2027', 'user2_tcb', '', '', '']);
 
   var rawResponse = DepositRepository.getAll(sheets, {}, null);
   var response = getResponseData(rawResponse);
@@ -221,7 +221,7 @@ function testDepositRepositoryAdd() {
 function testDepositRepositoryRollover() {
   Logger.log('Chạy: testDepositRepositoryRollover');
   var sheets = createMockSheets();
-  sheets.deposits.appendRow(['dep-1', 10000000, 6.0, STATUS_ACTIVE, 600000, '10/07/2026', '10/07/2027', 'user1_vcb', '', '']);
+  sheets.deposits.appendRow(['dep-1', 10000000, 6.0, STATUS_ACTIVE, 600000, '10/07/2026', '10/07/2027', 'user1_vcb', '', '', '']);
 
   var payload = {
     action: 'rollover_deposit',
@@ -638,17 +638,17 @@ function testCheckMaturityAndSendAlerts() {
     var dateIn1Day = formatDate(new Date(today.getTime() + 1 * MS_PER_DAY));
 
     // dep-1: sắp đáo hạn (2 ngày nữa) → alert cho userA
-    mockSheets.deposits.appendRow(['dep-1', 10000000, 6.0, STATUS_ACTIVE, 600000, dateToday, dateIn2Days, 'userA_vcb', '', '']);
+    mockSheets.deposits.appendRow(['dep-1', 10000000, 6.0, STATUS_ACTIVE, 600000, dateToday, dateIn2Days, 'userA_vcb', '', '', '']);
     // dep-2: quá hạn 1 ngày → alert cho userA
-    mockSheets.deposits.appendRow(['dep-2', 5000000, 5.0, STATUS_ACTIVE, 250000, dateToday, dateOverdue1Day, 'userA_vcb', '', '']);
+    mockSheets.deposits.appendRow(['dep-2', 5000000, 5.0, STATUS_ACTIVE, 250000, dateToday, dateOverdue1Day, 'userA_vcb', '', '', '']);
     // dep-3: còn 30 ngày → KHÔNG alert
-    mockSheets.deposits.appendRow(['dep-3', 15000000, 5.5, STATUS_ACTIVE, 825000, dateToday, dateIn30Days, 'userA_vcb', '', '']);
+    mockSheets.deposits.appendRow(['dep-3', 15000000, 5.5, STATUS_ACTIVE, 825000, dateToday, dateIn30Days, 'userA_vcb', '', '', '']);
     // dep-4: đáo hạn hôm nay → alert cho userB
-    mockSheets.deposits.appendRow(['dep-4', 8000000, 6.2, STATUS_ACTIVE, 496000, dateToday, dateToday, 'userB_tcb', '', '']);
+    mockSheets.deposits.appendRow(['dep-4', 8000000, 6.2, STATUS_ACTIVE, 496000, dateToday, dateToday, 'userB_tcb', '', '', '']);
     // dep-5: 1 ngày nữa nhưng userC không có chat ID → bỏ qua
-    mockSheets.deposits.appendRow(['dep-5', 12000000, 6.0, STATUS_ACTIVE, 720000, dateToday, dateIn1Day, 'userC_bidv', '', '']);
+    mockSheets.deposits.appendRow(['dep-5', 12000000, 6.0, STATUS_ACTIVE, 720000, dateToday, dateIn1Day, 'userC_bidv', '', '', '']);
     // dep-6: rolled_over → bỏ qua (chỉ quét active/matured)
-    mockSheets.deposits.appendRow(['dep-6', 10000000, 6.0, STATUS_ROLLED_OVER, 600000, dateToday, dateIn1Day, 'userA_vcb', '', '']);
+    mockSheets.deposits.appendRow(['dep-6', 10000000, 6.0, STATUS_ROLLED_OVER, 600000, dateToday, dateIn1Day, 'userA_vcb', '', '', '']);
 
     checkMaturityAndSendAlerts();
 
