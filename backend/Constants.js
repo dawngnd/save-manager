@@ -18,7 +18,8 @@ const DEP_COL_MATURITY_AT = 6;
 const DEP_COL_USER_BANKCODE = 7;
 const DEP_COL_PARENT_ID = 8;
 const DEP_COL_CHILD_ID = 9;
-const DEP_TOTAL_COLUMNS = 10;
+const DEP_COL_NOTE = 10;
+const DEP_TOTAL_COLUMNS = 11;
 
 // === DEPOSITS: SỐ THỨ TỰ CỘT TRONG SHEET (1-based, dùng cho getRange) ===
 const DEP_SHEET_COL_STATUS = DEP_COL_STATUS + 1;             // 4
@@ -71,7 +72,7 @@ const PROP_WORKER_SECRET = 'WORKER_SECRET';
 // === HEADERS SHEET ===
 const DEPOSITS_HEADERS = [
   'id', 'amount', 'interest_rate', 'status', 'expected_interest',
-  'created_at', 'maturity_at', 'user_bankcode', 'parent_id', 'child_id'
+  'created_at', 'maturity_at', 'user_bankcode', 'parent_id', 'child_id', 'note'
 ];
 const USERS_HEADERS = ['username_bankcode', 'telegram_chat_id', 'type', 'statics'];
 const GOLD_HEADERS = ['id', 'purchase_date', 'price_per_chi', 'quantity_gram', 'user_bankcode', 'provider'];

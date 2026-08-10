@@ -320,6 +320,12 @@ export const DepositList: React.FC<DepositListProps> = ({ deposits, onTriggerRol
                   {selectedDeposit.status === 'active' ? 'Đang hoạt động' : selectedDeposit.status === 'rolled_over' ? 'Đã tái tục' : selectedDeposit.status === 'withdrawn' ? 'Đã rút' : 'Đã đáo hạn'}
                 </span>
               </div>
+              {selectedDeposit.note && (
+                <div className="flex justify-between pt-1">
+                  <span className="text-[#708499]">Ghi chú:</span>
+                  <span className="text-[#f5f5f5] text-right max-w-[60%]">{selectedDeposit.note}</span>
+                </div>
+              )}
             </div>
 
             {/* Rollover Lineage Chain */}

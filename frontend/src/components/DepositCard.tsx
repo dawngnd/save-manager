@@ -60,6 +60,11 @@ export const DepositCard: React.FC<DepositCardProps> = ({ deposit, actualInteres
               </div>
             )
           )}
+          {deposit.note && (
+            <div className="text-[10px] text-[#708499] italic truncate max-w-[200px]">
+              📝 {deposit.note}
+            </div>
+          )}
         </div>
         <div className={`px-2.5 py-1 text-xs font-semibold rounded-lg border ${statusColorClass}`}>
           {statusText}
