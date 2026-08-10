@@ -228,7 +228,7 @@ export const GrowthChart: React.FC<GrowthChartProps> = ({ deposits }) => {
   }
 
   const currentPrincipal = deposits
-    .filter(d => d.status === 'active')
+    .filter(d => d.status === 'active' || d.status === 'matured')
     .reduce((sum, d) => sum + d.amount, 0);
   const peakTotal = data[data.length - 1].total;
   const totalInterestEarned = peakTotal - currentPrincipal;
@@ -349,7 +349,7 @@ export function generateStepWiseGrowthData(deposits: Deposit[]): ChartDataPoint[
         } catch { /* skip */ }
       }
 
-      if (activeDep) {
+      if (activeDep && activeDep.status !== 'rolled_over' && activeDep.status !== 'withdrawn') {
         principal += activeDep.amount;
         try {
           const matDate = parseClientDateString(activeDep.maturity_at);

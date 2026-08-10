@@ -48,6 +48,7 @@ const GOLD_TOTAL_COLUMNS = 6;
 const STATUS_ACTIVE = 'active';
 const STATUS_ROLLED_OVER = 'rolled_over';
 const STATUS_MATURED = 'matured';
+const STATUS_WITHDRAWN = 'withdrawn';
 
 // === CẤU HÌNH ===
 const HEADER_ROW = 1;

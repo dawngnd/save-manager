@@ -83,7 +83,7 @@ export const DepositList: React.FC<DepositListProps> = ({ deposits, onTriggerRol
   };
 
   // Filter and sort deposits
-  type StatusFilter = 'active' | 'matured' | 'rolled_over' | 'all';
+  type StatusFilter = 'active' | 'matured' | 'rolled_over' | 'withdrawn' | 'all';
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('active');
   const [bankFilter, setBankFilter] = useState<string>('all');
 
@@ -151,6 +151,7 @@ export const DepositList: React.FC<DepositListProps> = ({ deposits, onTriggerRol
     active: 'Đang hoạt động',
     matured: 'Đã đáo hạn',
     rolled_over: 'Đã tái tục',
+    withdrawn: 'Đã rút',
     all: 'Tất cả',
   };
 
@@ -310,11 +311,13 @@ export const DepositList: React.FC<DepositListProps> = ({ deposits, onTriggerRol
                 <span className={`px-2 py-0.5 text-xs font-semibold rounded-md border ${
                   selectedDeposit.status === 'rolled_over'
                     ? 'bg-[#708499]/10 text-[#708499] border-[#708499]/20'
-                    : selectedDeposit.status === 'matured' 
-                      ? 'bg-[#ff9f1a]/10 text-[#ff9f1a] border-[#ff9f1a]/20' 
-                      : 'bg-emerald-400/10 text-emerald-400 border-emerald-400/20'
+                    : selectedDeposit.status === 'withdrawn'
+                      ? 'bg-[#ff4d4d]/10 text-[#ff4d4d] border-[#ff4d4d]/20'
+                      : selectedDeposit.status === 'matured' 
+                        ? 'bg-[#ff9f1a]/10 text-[#ff9f1a] border-[#ff9f1a]/20' 
+                        : 'bg-emerald-400/10 text-emerald-400 border-emerald-400/20'
                 }`}>
-                  {selectedDeposit.status === 'active' ? 'Đang hoạt động' : selectedDeposit.status === 'rolled_over' ? 'Đã tái tục' : 'Đã đáo hạn'}
+                  {selectedDeposit.status === 'active' ? 'Đang hoạt động' : selectedDeposit.status === 'rolled_over' ? 'Đã tái tục' : selectedDeposit.status === 'withdrawn' ? 'Đã rút' : 'Đã đáo hạn'}
                 </span>
               </div>
             </div>
