@@ -48,7 +48,8 @@ class DepositRepository {
           maturity_at: values[i][DEP_COL_MATURITY_AT],
           user_bankcode: values[i][DEP_COL_USER_BANKCODE],
           parent_id: values[i][DEP_COL_PARENT_ID] || '',
-          child_id: values[i][DEP_COL_CHILD_ID] || ''
+          child_id: values[i][DEP_COL_CHILD_ID] || '',
+          note: values[i][DEP_COL_NOTE] || ''
         });
       }
     }

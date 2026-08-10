@@ -16,6 +16,7 @@ export interface Deposit {
   user_bankcode: string;
   parent_id: string; // ID khoản gốc (trống nếu là khoản đầu tiên)
   child_id: string;  // ID khoản con đã tái tục (trống nếu chưa tái tục)
+  note: string;       // Ghi chú tùy chọn
 }
 
 export interface GoldRecord {
