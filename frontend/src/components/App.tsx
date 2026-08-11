@@ -13,7 +13,8 @@ import { retrieveLaunchParams } from '@telegram-apps/sdk';
 import { Deposit, GoldPrice } from '../types';
 import { useDepositsCache } from '../hooks/useDepositsCache';
 import { useGoldsCache } from '../hooks/useGoldsCache';
-import { getGoldPrice } from '../api';
+import { getGoldPrice, AuthError } from '../api';
+import { Lock } from 'lucide-react';
 
 type ActiveTab = 'deposits' | 'gold';
 
@@ -21,6 +22,7 @@ export const App: React.FC = () => {
   const { deposits, loading, error, refresh } = useDepositsCache();
   const { golds, loading: goldsLoading, error: goldsError, refresh: refreshGolds } = useGoldsCache();
 
+  const [isUnauthorized, setIsUnauthorized] = useState<boolean>(false);
   const [activeTab, setActiveTab]           = useState<ActiveTab>('deposits');
   const [isFormOpen, setIsFormOpen]         = useState<boolean>(false);
   const [isRolloverOpen, setIsRolloverOpen] = useState<boolean>(false);
@@ -77,7 +79,18 @@ export const App: React.FC = () => {
     if (viewParam === 'chart' || startParam === 'chart') {
       setShowChart(true);
     }
-  }, []);
+
+    const initFetch = async () => {
+      try {
+        await refresh();
+      } catch (err: any) {
+        if (err instanceof AuthError || err?.name === 'AuthError') {
+          setIsUnauthorized(true);
+        }
+      }
+    };
+    initFetch();
+  }, [refresh]);
 
   const handleRefreshGoldPrice = async (forceRefresh = true) => {
     setGoldPriceLoading(true);
@@ -109,6 +122,30 @@ export const App: React.FC = () => {
     setRolloverDeposit(deposit);
     setIsRolloverOpen(true);
   };
+
+  if (isUnauthorized) {
+    return (
+      <div className="min-h-screen bg-[#17212b] text-[#f5f5f5] font-sans flex flex-col items-center justify-center p-4">
+        <div className="bg-[#0e1621] border border-[#2b394a] rounded-2xl p-8 max-w-sm w-full text-center space-y-6 shadow-2xl">
+          <div className="flex justify-center">
+            <Lock size={64} className="text-[#ff4d4d]" />
+          </div>
+          <h1 className="text-xl font-bold text-white">Không có quyền truy cập</h1>
+          <p className="text-sm text-[#708499]">Bạn không có trong danh sách được phép sử dụng ứng dụng này.</p>
+          <button
+            onClick={() => {
+              if (window.Telegram?.WebApp) {
+                window.Telegram.WebApp.close();
+              }
+            }}
+            className="w-full py-3 px-4 bg-[#ff4d4d]/20 hover:bg-[#ff4d4d]/30 text-[#ff4d4d] font-bold rounded-xl transition duration-150"
+          >
+            Đóng
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#17212b] text-[#f5f5f5] font-sans pb-24">

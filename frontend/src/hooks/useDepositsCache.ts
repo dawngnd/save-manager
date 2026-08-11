@@ -48,6 +48,9 @@ export function useDepositsCache() {
       writeCache(data);
     } catch (err: any) {
       console.error('Failed to fetch deposits:', err);
+      if (err.name === 'AuthError') {
+        throw err;
+      }
       setError(err.message || 'Không thể tải danh sách khoản tiết kiệm.');
     } finally {
       setLoading(false);
@@ -68,9 +71,7 @@ export function useDepositsCache() {
     });
   }, []);
 
-  useEffect(() => {
-    fetchDeposits();
-  }, [fetchDeposits]);
+  // useEffect(() => { fetchDeposits(); }, [fetchDeposits]); // Removed to let App.tsx handle it on mount
 
   return { deposits, loading, error, refresh, updateCache };
 }
