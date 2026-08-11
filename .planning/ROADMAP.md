@@ -20,7 +20,7 @@
 
 ### 🚧 v2.0 Polish & Analytics (Phases 6-8)
 
-- [ ] **Phase 6: Security & Hybrid Authentication** - Xác thực HMAC-SHA256 trên GAS backend, kiểm tra auth_date 24h, tự động liên kết telegram_chat_id và hỗ trợ Mock Auth dev mode.
+- [ ] **Phase 6: Security & Whitelist Authentication** - Xác thực HMAC-SHA256 trên GAS backend, kiểm tra auth_date 24h, whitelist chat_id trong GAS Script Properties và hỗ trợ Mock Auth dev mode.
 - [ ] **Phase 7: Portfolio Analytics & Asset Metrics** - Biểu đồ Doughnut phân bổ tài sản theo ngân hàng/kỳ hạn và thẻ chỉ số lãi suất trung bình gia quyền (WAIR).
 - [ ] **Phase 8: Deposit Lineage Tree & History** - Duyệt phả hệ 2 chiều khoản gửi tái tục, hiển thị sơ đồ cây timeline tree UI và tổng lãi tích lũy/hệ số tăng trưởng.
 
@@ -28,14 +28,14 @@
 
 ## Phase Details
 
-### Phase 6: Security & Hybrid Authentication
-- **Goal**: Bảo mật REST API bằng xác thực HMAC-SHA256 trên GAS backend, chống replay attack qua auth_date 24h, tự động liên kết Telegram Chat ID vào cơ sở dữ liệu và duy trì Mock Auth mượt mà cho môi trường dev desktop.
-- **Requirements**: `AUTH-02`, `AUTH-03`, `AUTH-04`, `GAP-03`
+### Phase 6: Security & Whitelist Authentication
+- **Goal**: Bảo mật REST API bằng xác thực HMAC-SHA256 trên GAS backend, chống replay attack qua auth_date 24h, kiểm tra chat_id thuộc whitelist cấu hình trong GAS Script Properties, và duy trì Mock Auth cho môi trường dev desktop. Sau auth, load toàn bộ deposits không phân quyền theo bankcode.
+- **Requirements**: `AUTH-02`, `AUTH-03`, `AUTH-04`, `AUTH-05`
 - **Success Criteria**:
   1. Người dùng truy cập ứng dụng qua Telegram Web App được xác thực chữ ký HMAC-SHA256 hợp lệ ở backend GAS trước khi thực hiện các yêu cầu đọc/ghi dữ liệu.
   2. Request chứa `auth_date` hết hạn (>24 giờ) bị từ chối với thông báo lỗi rõ ràng nhằm phòng chống tấn công phát lại (replay attack).
   3. Lập trình viên chạy ứng dụng ở chế độ local dev (`npm run dev`) trên trình duyệt desktop tự động chuyển đổi sang Mock Auth mà không bị gián đoạn hay cần giả lập HMAC.
-  4. Hệ thống tự động liên kết và lưu `telegram_chat_id` từ `initData` vào bảng `Users` trong Google Sheets khi xác thực thành công lần đầu.
+  4. Chat_id không thuộc whitelist trong GAS Script Properties bị reject với lỗi unauthorized — chỉ chat_id được cấu hình mới truy cập được.
 
 ### Phase 7: Portfolio Analytics & Asset Metrics
 - **Goal**: Cung cấp bức tranh tổng quan phân bổ danh mục tiết kiệm active theo ngân hàng, nhóm kỳ hạn và đo lường chỉ số lãi suất trung bình gia quyền (WAIR).
@@ -68,6 +68,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | 3. Telegram Bot Webhook Integration | v1.0 | 2/2 | Complete | 2026-07-10 |
 | 4. Frontend UI (TWA) & Auth | v1.0 | 3/3 | Complete | 2026-07-10 |
 | 5. Charts & Rollover Mechanics | v1.0 | 2/2 | Complete | 2026-07-10 |
-| 6. Security & Hybrid Authentication | v2.0 | 0/0 | Not started | — |
+| 6. Security & Whitelist Authentication | v2.0 | 0/0 | Not started | — |
 | 7. Portfolio Analytics & Asset Metrics | v2.0 | 0/0 | Not started | — |
 | 8. Deposit Lineage Tree & History | v2.0 | 0/0 | Not started | — |

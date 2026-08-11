@@ -12,10 +12,7 @@ Requirements cho milestone v2.0 Polish & Analytics. Mỗi mục map đến roadm
 - [ ] **AUTH-02**: Xác thực chữ ký HMAC-SHA256 trên initData Telegram Web App ở backend GAS
 - [ ] **AUTH-03**: Kiểm tra auth_date hết hạn (≤ 24h) để chống replay attack
 - [ ] **AUTH-04**: Hỗ trợ Hybrid Auth — fallback mock cho môi trường dev desktop
-
-### Integration Fixes
-
-- [ ] **GAP-03**: Tự động liên kết telegram_chat_id vào bảng Users khi xác thực HMAC thành công
+- [ ] **AUTH-05**: Whitelist chat_id hợp lệ trong GAS Script Properties — reject nếu chat_id không thuộc whitelist
 
 ### Analytics
 
@@ -35,8 +32,12 @@ Deferred — không nằm trong roadmap v2.0.
 
 ### UI Polish
 
-- **GAP-01**: Tích hợp UserSelector dropdown vào màn hình bắt đầu của App.tsx
+- **GAP-01**: Tích hợp UserSelector dropdown vào màn hình bắt đầu của App.tsx (không cần nữa — auth whitelist thay thế)
 - **GAP-02**: Hỗ trợ nhập tay bankcode mới khi thêm khoản tiết kiệm trong DepositForm
+
+### Integration Fixes
+
+- **GAP-03**: Tự động liên kết telegram_chat_id vào bảng Users (không cần nữa — whitelist chat_id thay thế)
 
 ## Out of Scope
 
@@ -44,8 +45,10 @@ Deferred — không nằm trong roadmap v2.0.
 |---------|--------|
 | Session token lưu trên Sheets | Thêm complexity không cần thiết — HMAC stateless đủ cho app cá nhân |
 | D3.js / React Flow cho lineage tree | Phình bundle single-file (>250KB), conflict với TWA touch gestures |
-| OAuth / đăng nhập mật khẩu | App cá nhân, Telegram auth là đủ |
+| OAuth / đăng nhập mật khẩu | App cá nhân, Telegram auth + whitelist là đủ |
 | Đa tiền tệ | Chỉ sử dụng VND cho v2.0 |
+| Phân quyền theo bankcode | Load all deposits — app cá nhân không cần phân quyền |
+| UserSelector dropdown | Whitelist chat_id thay thế — sau auth load toàn bộ dữ liệu |
 
 ## Traceability
 
@@ -54,7 +57,7 @@ Deferred — không nằm trong roadmap v2.0.
 | AUTH-02 | Phase 6 | Pending |
 | AUTH-03 | Phase 6 | Pending |
 | AUTH-04 | Phase 6 | Pending |
-| GAP-03 | Phase 6 | Pending |
+| AUTH-05 | Phase 6 | Pending |
 | STAT-02 | Phase 7 | Pending |
 | STAT-03 | Phase 7 | Pending |
 | STAT-04 | Phase 7 | Pending |
@@ -69,4 +72,4 @@ Deferred — không nằm trong roadmap v2.0.
 
 ---
 *Requirements defined: 2026-08-11*
-*Last updated: 2026-08-11 after v2.0 roadmap creation*
+*Last updated: 2026-08-11 after auth flow clarification (whitelist chat_id)*
