@@ -38,7 +38,7 @@ declare global {
 type ActiveTab = 'deposits' | 'gold' | 'analytics';
 
 export const App: React.FC = () => {
-  const { deposits, loading, error, refresh } = useDepositsCache();
+  const { deposits, loading, error, refresh, fetchDeposits } = useDepositsCache();
   const { golds, loading: goldsLoading, error: goldsError, refresh: refreshGolds } = useGoldsCache();
 
   const [isUnauthorized, setIsUnauthorized] = useState<boolean>(false);
@@ -101,7 +101,7 @@ export const App: React.FC = () => {
 
     const initFetch = async () => {
       try {
-        await refresh();
+        await fetchDeposits();
       } catch (err: any) {
         if (err instanceof AuthError || err?.name === 'AuthError') {
           setIsUnauthorized(true);
@@ -109,7 +109,7 @@ export const App: React.FC = () => {
       }
     };
     initFetch();
-  }, [refresh]);
+  }, [fetchDeposits]);
 
   const handleRefreshGoldPrice = async (forceRefresh = true) => {
     setGoldPriceLoading(true);
