@@ -51,22 +51,22 @@ Deferred — không nằm trong roadmap v2.0.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-02 | — | Pending |
-| AUTH-03 | — | Pending |
-| AUTH-04 | — | Pending |
-| GAP-03 | — | Pending |
-| STAT-02 | — | Pending |
-| STAT-03 | — | Pending |
-| STAT-04 | — | Pending |
-| HIST-01 | — | Pending |
-| HIST-02 | — | Pending |
-| HIST-03 | — | Pending |
+| AUTH-02 | Phase 6 | Pending |
+| AUTH-03 | Phase 6 | Pending |
+| AUTH-04 | Phase 6 | Pending |
+| GAP-03 | Phase 6 | Pending |
+| STAT-02 | Phase 7 | Pending |
+| STAT-03 | Phase 7 | Pending |
+| STAT-04 | Phase 7 | Pending |
+| HIST-01 | Phase 8 | Pending |
+| HIST-02 | Phase 8 | Pending |
+| HIST-03 | Phase 8 | Pending |
 
 **Coverage:**
 - v2.0 requirements: 10 total
-- Mapped to phases: 0
-- Unmapped: 10 ⚠️
+- Mapped to phases: 10
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-08-11*
-*Last updated: 2026-08-11 after initial definition*
+*Last updated: 2026-08-11 after v2.0 roadmap creation*
