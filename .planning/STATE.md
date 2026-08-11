@@ -1,20 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-current_phase: 0
-status: Awaiting next milestone
-stopped_at: Completed Phase 5 Wave 2
-last_updated: "2026-07-14T05:12:28.014Z"
-last_activity: 2026-07-14
-last_activity_desc: Milestone v1.0 completed and archived
+milestone: v2.0
+milestone_name: Polish & Analytics
+status: planning
+last_updated: "2026-08-11T01:44:51.784Z"
+last_activity: 2026-08-11
 progress:
-  total_phases: 5
-  completed_phases: 5
-  total_plans: 11
-  completed_plans: 11
-  percent: 100
-current_phase_name: charts-rollover-mechanics
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -28,10 +24,10 @@ See: .planning/PROJECT.md (updated 2026-07-10)
 
 ## Current Position
 
-Phase: Milestone v1.0 complete
+Phase: Not started (defining requirements)
 Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-07-14 — Milestone v1.0 completed and archived
+Status: Defining requirements
+Last activity: 2026-08-11 — Milestone v2.0 started
 
 ## Performance Metrics
 
