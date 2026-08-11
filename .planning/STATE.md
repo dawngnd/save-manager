@@ -2,17 +2,18 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Polish & Analytics
-current_phase: 6
-status: ready_to_plan
-stopped_at: Phase 6 context gathered
-last_updated: "2026-08-11T03:02:04.031Z"
+current_phase: 06
+current_phase_name: Security & Whitelist Authentication
+status: completed
+stopped_at: Phase 6 completed
+last_updated: "2026-08-11T10:22:00.000Z"
 last_activity: 2026-08-11
-last_activity_desc: Created v2.0 Roadmap (Phases 6-8)
+last_activity_desc: Phase 06 execution started
 progress:
   total_phases: 3
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_plans: 1
+  completed_plans: 1
   percent: 0
 ---
 
@@ -23,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-11)
 
 **Core value:** Quản lý chính xác trạng thái các khoản tiết kiệm, hỗ trợ tái tục linh hoạt và hiển thị biểu đồ trực quan ước tính tăng trưởng tổng tài sản theo thời gian.
-**Current focus:** Phase 6 — Security & Hybrid Authentication
+**Current focus:** Phase 06 — Security & Whitelist Authentication
 
 ## Current Position
 
-Phase: Phase 6 — Security & Hybrid Authentication (Not started)
-Plan: —
-Status: Ready for planning
-Last activity: 2026-08-11 — Created v2.0 Roadmap (Phases 6-8)
+Phase: 06 (Security & Whitelist Authentication) — EXECUTING
+Plan: 1 of 1
+Status: Completed Phase 06
+Last activity: 2026-08-11 — Phase 06 execution completed
 
 ## Performance Metrics
 
@@ -71,6 +72,7 @@ Last activity: 2026-08-11 — Created v2.0 Roadmap (Phases 6-8)
 | Phase 04-frontend-ui-twa-auth P03 | 15min | 5 tasks | 5 files |
 | Phase 05 P01 | 15 | 2 tasks | 4 files |
 | Phase 05 P02 | 15min | 2 tasks | 3 files |
+| Phase 06 | 15min | 4 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -89,6 +91,7 @@ Recent decisions affecting current work:
 - [Phase 03-telegram-bot-webhook-integration]: Tự động cập nhật telegram_chat_id của user trong bảng Users khi frontend gọi API get_deposits có đính kèm telegram_chat_id.
 - [Phase ?]: Lập lịch trigger chạy hàng ngày lúc 7:00 AM - 8:00 AM bằng ScriptApp.newTrigger và dọn dẹp các trigger cũ cùng tên để tránh trùng lặp.
 - [Phase ?]: Gom nhóm toàn bộ các khoản cảnh báo sắp đáo hạn/quá hạn của một user và gửi một tin nhắn tổng hợp duy nhất thay vì gửi tin lẻ để tránh rate limit.
+- [Phase 06]: Bắt buộc kiểm tra HMAC whitelist cho các API gọi từ client. Fallback `_serverSecret` cho worker và mock dev sẽ generate valid initData signature.
 
 ### Pending Todos
 
