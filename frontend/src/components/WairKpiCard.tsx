@@ -6,7 +6,11 @@ interface WairKpiCardProps {
 }
 
 export const WairKpiCard: React.FC<WairKpiCardProps> = ({ deposits }) => {
-  const activeDeposits = deposits.filter(d => d.status === 'active');
+  // Lọc deposits active VÀ có lãi suất hợp lệ (0-30%)
+  // Phòng thủ dữ liệu lỗi từ Sheets (ví dụ: Excel date serial thay vì lãi suất)
+  const activeDeposits = deposits.filter(
+    d => d.status === 'active' && d.interest_rate > 0 && d.interest_rate <= 30
+  );
   const totalAmount = activeDeposits.reduce((s, d) => s + d.amount, 0);
   const totalWeightedInterest = activeDeposits.reduce((s, d) => s + (d.amount * d.interest_rate), 0);
   

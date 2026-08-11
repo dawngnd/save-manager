@@ -73,5 +73,5 @@ export function useDepositsCache() {
 
   // useEffect(() => { fetchDeposits(); }, [fetchDeposits]); // Removed to let App.tsx handle it on mount
 
-  return { deposits, loading, error, refresh, updateCache };
+  return { deposits, loading, error, refresh, fetchDeposits, updateCache };
 }
