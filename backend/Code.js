@@ -68,12 +68,17 @@ function doPost(e) {
       var botToken = properties ? properties.getProperty(PROP_TELEGRAM_BOT_TOKEN) : null;
       var verifyResult = AuthService.verifyWebAppData(initData, botToken);
       if (verifyResult !== '') {
-        return ResponseHelper.json('error', 'Xác thực thất bại.');
+        return ResponseHelper.json('error', 'Unauthorized');
       }
     }
 
     // Extract authenticated telegram user ID từ initData
     var authenticatedChatId = AuthService.extractUserId(initData);
+    
+    // Kiểm tra quyền Whitelist
+    if (!authenticatedChatId || !AuthService.isUserWhitelisted(authenticatedChatId, properties)) {
+      return ResponseHelper.json('error', 'Unauthorized');
+    }
 
     // Yêu cầu chỉ đọc: Không sử dụng LockService để tránh nghẽn luồng đọc
     if (action === 'get_users') {

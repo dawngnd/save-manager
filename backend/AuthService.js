@@ -37,11 +37,10 @@ class AuthService {
    */
   static verifyWebAppData(initData, botToken) {
     if (!initData) {
-      if (!botToken) return ''; // Bypass test offline
-      return 'initData is missing';
+      return 'Unauthorized';
     }
 
-    if (!botToken) return 'MISSING';
+    if (!botToken) return 'Unauthorized';
 
     try {
       var params = {};
@@ -56,13 +55,13 @@ class AuthService {
 
       var hash = params['hash'];
       if (!hash) {
-        return 'Xác thực thất bại.';
+        return 'Unauthorized';
       }
 
       var authDate = parseInt(params['auth_date'], 10);
       var currentTime = Math.floor(Date.now() / 1000);
       if (isNaN(authDate) || (currentTime - authDate) > AUTH_EXPIRY_SECONDS) {
-        return 'Phiên đăng nhập đã hết hạn.';
+        return 'Unauthorized';
       }
 
       var sortedKeys = Object.keys(params).filter(function(k) { return k !== 'hash'; }).sort();
@@ -86,11 +85,34 @@ class AuthService {
 
       if (signatureHex !== hash) {
         Logger.log('HMAC mismatch. got=' + signatureHex.substring(0, 16) + '... expected=' + hash.substring(0, 16) + '...');
-        return 'Xác thực thất bại.';
+        return 'Unauthorized';
       }
       return '';
     } catch (err) {
-      return 'Exception: ' + err.toString();
+      return 'Unauthorized';
+    }
+  }
+
+  /**
+   * Kiểm tra xem ID người dùng có nằm trong Whitelist không
+   * @param {string|number} chatId 
+   * @param {GoogleAppsScript.Properties.Properties} properties 
+   * @returns {boolean}
+   */
+  static isUserWhitelisted(chatId, properties) {
+    if (!chatId || !properties) return false;
+    var allowedIdsStr = properties.getProperty(PROP_ALLOWED_CHAT_IDS);
+    if (!allowedIdsStr) return false;
+    try {
+      var allowedIds = JSON.parse(allowedIdsStr);
+      if (!Array.isArray(allowedIds)) return false;
+      var strChatId = String(chatId);
+      for (var i = 0; i < allowedIds.length; i++) {
+        if (String(allowedIds[i]) === strChatId) return true;
+      }
+      return false;
+    } catch (e) {
+      return false;
     }
   }
 }
