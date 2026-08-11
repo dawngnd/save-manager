@@ -13,6 +13,7 @@ type SortOption = 'maturity_at' | 'amount' | 'expected_interest' | 'actual_inter
 
 export const DepositList: React.FC<DepositListProps> = ({ deposits, onTriggerRollover }) => {
   const [selectedDeposit, setSelectedDeposit] = useState<Deposit | null>(null);
+  const [isLineageExpanded, setIsLineageExpanded] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>('maturity_at');
 
   const formatCurrency = (value: number) => {
@@ -234,7 +235,10 @@ export const DepositList: React.FC<DepositListProps> = ({ deposits, onTriggerRol
               key={deposit.id}
               deposit={deposit}
               actualInterest={getActualInterest(deposit)}
-              onClick={() => setSelectedDeposit(deposit)}
+              onClick={() => {
+                setSelectedDeposit(deposit);
+                setIsLineageExpanded(false);
+              }}
             />
           ))}
         </div>
@@ -331,55 +335,87 @@ export const DepositList: React.FC<DepositListProps> = ({ deposits, onTriggerRol
             {/* Rollover Lineage Chain */}
             {rolloverChain.length > 1 && (
               <div className="bg-[#17212b] border border-[#2c3847] rounded-xl p-4 space-y-3">
-                <div className="text-xs text-[#708499] font-semibold uppercase tracking-wider">
-                  🔗 Lịch sử tái tục ({rolloverChain.length} kỳ)
-                </div>
-                <div className="relative pl-5 space-y-0">
-                  {rolloverChain.map((dep, idx) => {
-                    const isSelected = dep.id === selectedDeposit.id;
-                    const isLast = idx === rolloverChain.length - 1;
-                    return (
-                      <div key={dep.id} className="relative">
-                        {/* Vertical line */}
-                        {!isLast && (
-                          <div className="absolute left-[-12px] top-5 w-[2px] h-full bg-[#2c3847]" />
-                        )}
-                        {/* Dot */}
-                        <div className={`absolute left-[-16px] top-1.5 w-[10px] h-[10px] rounded-full border-2 ${
-                          isSelected
-                            ? 'bg-[#64b5f6] border-[#64b5f6]'
-                            : dep.status === 'rolled_over'
-                              ? 'bg-[#2c3847] border-[#708499]'
-                              : 'bg-emerald-400 border-emerald-400'
-                        }`} />
-                        {/* Content */}
-                        <button
-                          type="button"
-                          onClick={() => setSelectedDeposit(dep)}
-                          className={`w-full text-left pb-4 pl-1 transition cursor-pointer ${
-                            isSelected ? 'opacity-100' : 'opacity-60 hover:opacity-90'
-                          }`}
-                        >
-                          <div className="text-xs font-semibold text-[#f5f5f5]">
-                            Kỳ {idx + 1}: {formatCurrency(dep.amount)}
-                            {idx === 0 && <span className="text-[#708499] ml-1">(gốc)</span>}
-                            {(() => {
-                              const ai = getActualInterest(dep);
-                              return ai != null && ai !== 0 ? (
-                                <span className={`ml-1 ${ai >= 0 ? 'text-emerald-400' : 'text-[#ff4d4d]'}`}>
-                                  ({ai >= 0 ? '+' : ''}{ai.toLocaleString('vi-VN')} ₫)
-                                </span>
-                              ) : null;
-                            })()}
+                <div 
+                  className="flex flex-col gap-2 cursor-pointer transition hover:opacity-80"
+                  onClick={() => setIsLineageExpanded(!isLineageExpanded)}
+                >
+                  <div className="flex justify-between items-center text-xs text-[#708499] font-semibold uppercase tracking-wider">
+                    <span>🔗 Lịch sử tái tục ({rolloverChain.length} kỳ)</span>
+                    <span className="text-[10px] bg-[#2c3847] text-[#f5f5f5] px-2 py-0.5 rounded-full">{isLineageExpanded ? 'Thu gọn' : 'Mở rộng'}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    {(() => {
+                      const accumulatedInterest = rolloverChain
+                        .filter(d => d.status !== 'active')
+                        .reduce((sum, d) => sum + d.expected_interest, 0);
+                      const growthFactor = selectedDeposit.amount / rolloverChain[0].amount;
+                      return (
+                        <>
+                          <div className="flex-1 bg-[#0e1621] border border-[#2c3847] rounded-lg p-2 flex flex-col justify-center">
+                            <span className="text-[10px] text-[#708499]">LÃI TÍCH LŨY</span>
+                            <span className="text-xs font-bold text-emerald-400">+{formatCurrency(accumulatedInterest)}</span>
                           </div>
-                          <div className="text-[10px] text-[#708499]">
-                            {dep.created_at} → {dep.maturity_at} · {dep.interest_rate}%
+                          <div className="flex-1 bg-[#0e1621] border border-[#2c3847] rounded-lg p-2 flex flex-col justify-center">
+                            <span className="text-[10px] text-[#708499]">TĂNG TRƯỞNG</span>
+                            <span className="text-xs font-bold text-[#64b5f6]">x{growthFactor.toFixed(2)}</span>
                           </div>
-                        </button>
-                      </div>
-                    );
-                  })}
+                        </>
+                      );
+                    })()}
+                  </div>
                 </div>
+
+                {isLineageExpanded && (
+                  <div className="relative pl-5 space-y-0 pt-2 border-t border-[#2c3847]/40 mt-3">
+                    {rolloverChain.map((dep, idx) => {
+                      const isSelected = dep.id === selectedDeposit.id;
+                      const isLast = idx === rolloverChain.length - 1;
+                      return (
+                        <div key={dep.id} className="relative mt-2">
+                          {/* Vertical line */}
+                          {!isLast && (
+                            <div className="absolute left-[-12px] top-5 w-[2px] h-full bg-[#2c3847]" />
+                          )}
+                          {/* Dot */}
+                          <div className={`absolute left-[-16px] top-1.5 w-[10px] h-[10px] rounded-full border-2 ${
+                            isSelected
+                              ? 'bg-[#64b5f6] border-[#64b5f6]'
+                              : dep.status === 'rolled_over'
+                                ? 'bg-[#2c3847] border-[#708499]'
+                                : 'bg-emerald-400 border-emerald-400'
+                          }`} />
+                          {/* Content */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedDeposit(dep);
+                            }}
+                            className={`w-full text-left pb-4 pl-1 transition cursor-pointer ${
+                              isSelected ? 'opacity-100' : 'opacity-60 hover:opacity-90'
+                            }`}
+                          >
+                            <div className="text-xs font-semibold text-[#f5f5f5]">
+                              Kỳ {idx + 1}: {formatCurrency(dep.amount)}
+                              {idx === 0 && <span className="text-[#708499] ml-1">(gốc)</span>}
+                              {(() => {
+                                const ai = getActualInterest(dep);
+                                return ai != null && ai !== 0 ? (
+                                  <span className={`ml-1 ${ai >= 0 ? 'text-emerald-400' : 'text-[#ff4d4d]'}`}>
+                                    ({ai >= 0 ? '+' : ''}{ai.toLocaleString('vi-VN')} ₫)
+                                  </span>
+                                ) : null;
+                              })()}
+                            </div>
+                            <div className="text-[10px] text-[#708499]">
+                              {dep.created_at} → {dep.maturity_at} · {dep.interest_rate}%
+                            </div>
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
             

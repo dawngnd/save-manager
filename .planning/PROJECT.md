@@ -13,12 +13,17 @@ Quản lý chính xác trạng thái các khoản tiết kiệm, hỗ trợ tái
 - **Shipped Version:** v1.0 (2026-07-14)
 - **Status:** Hoàn tất 5 phase cốt lõi của MVP, tích hợp hệ thống Database Google Sheets, API GAS, Telegram Bot Webhook, daily triggers cảnh báo và frontend React SPA dạng single-file.
 
-## Next Milestone Goals (v2.0)
+## Current Milestone: v2.0 Polish & Analytics
 
-- Sửa các lỗi tích hợp giao diện (Auth-01 UserSelector và auto-linking Chat ID).
-- Nâng cấp xác thực đầy đủ signature Telegram Web App bằng HMAC-SHA256.
-- Phát triển giao diện xem phả hệ (lineage tree) các thế hệ khoản gửi đã tái tục.
-- Phát triển tính năng phân tích tỷ trọng tài sản theo kỳ hạn/ngân hàng.
+**Goal:** Sửa các lỗi tích hợp giao diện từ v1.0 và bổ sung tính năng phân tích/lịch sử nâng cao.
+
+**Target features:**
+- AUTH-02: Xác thực HMAC-SHA256 cho Telegram initData
+- STAT-02: Phân tích tỷ trọng tiết kiệm theo kỳ hạn/ngân hàng
+- HIST-01: Phả hệ (lineage tree) khoản gửi đã tái tục
+- GAP-01: Tích hợp UserSelector dropdown vào App.tsx
+- GAP-02: Nhập tay bankcode mới trong DepositForm
+- GAP-03: Auto-link Chat ID qua API get_deposits
 
 ## Requirements
 
@@ -97,4 +102,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-14 after v1.0 milestone completion*
+*Last updated: 2026-08-11 after v2.0 milestone start*

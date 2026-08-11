@@ -1,5 +1,13 @@
 import { initializeTelegramSDK } from './utils/telegram';
 
+export class AuthError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'AuthError';
+  }
+}
+
+
 interface ApiPayload {
   action: string;
   initData: string;
@@ -10,7 +18,7 @@ interface ApiPayload {
 }
 
 export async function callBackendApi<T = any>(payload: Omit<ApiPayload, 'initData'>): Promise<T> {
-  const session = initializeTelegramSDK();
+  const session = await initializeTelegramSDK();
   const fullPayload: ApiPayload = {
     action: payload.action,
     ...payload,
@@ -41,6 +49,9 @@ export async function callBackendApi<T = any>(payload: Omit<ApiPayload, 'initDat
 
   const result = await response.json();
   if (result.status === 'error') {
+    if (result.message === 'Unauthorized') {
+      throw new AuthError(result.message);
+    }
     throw new Error(result.message || "Đã xảy ra lỗi từ API backend.");
   }
   return result.data as T;

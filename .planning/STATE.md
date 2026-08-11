@@ -1,37 +1,37 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-current_phase: 0
-status: Awaiting next milestone
-stopped_at: Completed Phase 5 Wave 2
-last_updated: "2026-07-14T05:12:28.014Z"
-last_activity: 2026-07-14
-last_activity_desc: Milestone v1.0 completed and archived
+milestone: v2.0
+milestone_name: Polish & Analytics
+current_phase: 08
+status: completed
+stopped_at: Phase 8 completed
+last_updated: "2026-08-11T05:51:08.823Z"
+last_activity: 2026-08-11
+last_activity_desc: Phase 08 marked complete
 progress:
-  total_phases: 5
-  completed_phases: 5
-  total_plans: 11
-  completed_plans: 11
+  total_phases: 3
+  completed_phases: 3
+  total_plans: 3
+  completed_plans: 3
   percent: 100
-current_phase_name: charts-rollover-mechanics
+current_phase_name: Deposit Lineage Tree & History
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-07-10)
+See: .planning/PROJECT.md (updated 2026-08-11)
 
 **Core value:** Quản lý chính xác trạng thái các khoản tiết kiệm, hỗ trợ tái tục linh hoạt và hiển thị biểu đồ trực quan ước tính tăng trưởng tổng tài sản theo thời gian.
-**Current focus:** Phase 5 — charts-rollover-mechanics
+**Current focus:** Phase 08 — Deposit Lineage Tree & History
 
 ## Current Position
 
-Phase: Milestone v1.0 complete
-Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-07-14 — Milestone v1.0 completed and archived
+Phase: 08 — COMPLETE
+Plan: 1 of 1
+Status: Phase 08 complete
+Last activity: 2026-08-11 — Phase 08 marked complete
 
 ## Performance Metrics
 
@@ -72,6 +72,7 @@ Last activity: 2026-07-14 — Milestone v1.0 completed and archived
 | Phase 04-frontend-ui-twa-auth P03 | 15min | 5 tasks | 5 files |
 | Phase 05 P01 | 15 | 2 tasks | 4 files |
 | Phase 05 P02 | 15min | 2 tasks | 3 files |
+| Phase 06 | 15min | 4 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -90,6 +91,7 @@ Recent decisions affecting current work:
 - [Phase 03-telegram-bot-webhook-integration]: Tự động cập nhật telegram_chat_id của user trong bảng Users khi frontend gọi API get_deposits có đính kèm telegram_chat_id.
 - [Phase ?]: Lập lịch trigger chạy hàng ngày lúc 7:00 AM - 8:00 AM bằng ScriptApp.newTrigger và dọn dẹp các trigger cũ cùng tên để tránh trùng lặp.
 - [Phase ?]: Gom nhóm toàn bộ các khoản cảnh báo sắp đáo hạn/quá hạn của một user và gửi một tin nhắn tổng hợp duy nhất thay vì gửi tin lẻ để tránh rate limit.
+- [Phase 06]: Bắt buộc kiểm tra HMAC whitelist cho các API gọi từ client. Fallback `_serverSecret` cho worker và mock dev sẽ generate valid initData signature.
 
 ### Pending Todos
 
@@ -109,9 +111,9 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-14T04:18:13.829Z
-Stopped at: Completed Phase 5 Wave 2
-Resume file: None
+Last session: 2026-08-11T05:50:45.806Z
+Stopped at: Phase 8 completed
+Resume file: .planning/STATE.md
 
 ## Quick Tasks Completed
 

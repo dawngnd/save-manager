@@ -1,223 +1,332 @@
 # Pitfalls Research
 
-**Domain:** Google Apps Script + Google Sheets + Telegram Web App
-**Researched:** 2026-07-10
+**Domain:** Google Apps Script + Google Sheets + Telegram Web App (React SPA)
+**Milestone:** v2.0 Polish & Analytics (HMAC Auth, Lineage Tree, Portfolio Analytics)
+**Researched:** 2026-08-11
 **Confidence:** HIGH
+
+---
+
+## Executive Summary
+
+Adding **HMAC-SHA256 Telegram authentication (`AUTH-02`)**, **deposit lineage tree visualization (`HIST-01`)**, and **portfolio analytics charts (`STAT-02`)** to an existing Google Apps Script (GAS) + Google Sheets + React SPA architecture introduces distinct technical edge cases.
+
+The primary pitfalls center around:
+1. **Google Apps Script Cryptographic Quirks**: `Utilities.computeHmacSha256Signature` argument ordering `(value, key)` and string conversion corruption of raw binary key bytes when validating Telegram WebApp `initData`.
+2. **Data Structure & Visualization Hazards**: Circular parent-child references in Google Sheets causing infinite recursion loops in React tree components, and single-file bundle bloat from heavy graph libraries.
+3. **Chart.js Lifecycle & Data Aggregation Errors**: Canvas re-use crashes during React state changes, theme text invisibility across Telegram light/dark mode transitions, and financial double-counting of historical `rolled_over` deposits in asset allocation summaries.
+
+---
 
 ## Critical Pitfalls
 
-### Pitfall 1: Aggressive GAS Web App Caching & Versioning Issues
+### Pitfall 1: GAS `Utilities.computeHmacSha256Signature` Binary Key Conversion & Argument Order Corruption (`AUTH-02`)
 
 **What goes wrong:**
-Developers update the HTML/JS/CSS code in Google Apps Script, but the Telegram Web App interface continues to load the old version. New features appear broken, or style changes are completely ignored, leading to inconsistent behavior and difficult debugging.
+`AuthService.verifyWebAppData` continuously fails validation in production inside Telegram Web App (returning `"Xác thực thất bại"` even for legitimate users), or fails silently by allowing invalid signatures.
 
 **Why it happens:**
-Google Apps Script caches Web App outputs aggressively. A deployment URL ending with `/exec` is static and only reflects the codebase state at the exact moment the deployment version was created. Simply saving the file in the GAS Editor does not update the active Web App.
+Two subtle Google Apps Script behaviors cause standard Telegram WebApp HMAC verification code to break:
+1. **Argument Order Reversal**: Unlike Node.js `crypto.createHmac(algo, key).update(data)`, GAS `Utilities.computeHmacSha256Signature(value, key)` expects **`value` (message)** as the 1st parameter and **`key`** as the 2nd parameter. Reversing these produces completely invalid hashes.
+2. **Binary Byte Array Key Encoding Distortion**: Telegram's HMAC verification requires a two-step hash:
+   - `secret_key = HMAC-SHA256(key="WebAppData", msg=bot_token)`
+   - `hash = HMAC-SHA256(key=secret_key, msg=data_check_string)`
+   `computeHmacSha256Signature` returns a signed byte array (`Byte[]` with range -128 to 127). If code converts this byte array to a JavaScript UTF-16 string via `String.fromCharCode(b < 0 ? b + 256 : b)` and passes that string as the `key` parameter to the second `computeHmacSha256Signature` call, GAS internally converts the UTF-16 string back to UTF-8. Bytes in range 128–255 become 2-byte UTF-8 sequences, corrupting the 32-byte binary key!
 
 **How to avoid:**
-1. During active development, use the Developer Mode URL (`.../dev`) inside the Telegram Bot settings. The `/dev` URL executes the latest code directly.
-2. For production updates, always create a **New Version** in the GAS deployment settings. Avoid just editing an existing deployment without incrementing the version.
-3. Use script-bundling or inject dependencies dynamically. For external CSS/JS libraries (like Chart.js), append a cache-busting query parameter (e.g., `?v=TIMESTAMP`) to force refresh.
-
-**Warning signs:**
-- Direct console logs added in code do not print in the Telegram Web App inspector.
-- CSS layout changes appear on local browser test but fail inside the Telegram container.
-
-**Phase to address:**
-Phase 1: Setup & Web App Integration.
-
----
-
-### Pitfall 2: Telegram Web App Authentication Bypass (Lack of `initData` Validation)
-
-**What goes wrong:**
-Because the app uses manual input of `username_bankcode` to authenticate (Decision DB-01), the GAS backend is vulnerable. A malicious user can inspect Telegram client traffic, extract the GAS Web App endpoint URL, and send custom HTTP requests to fetch or modify another user's financial details.
-
-**Why it happens:**
-Developers mistakenly assume that because the Web App is opened inside Telegram, only authorized Telegram users can hit the underlying API. In reality, the Apps Script URL is public and exposed.
-
-**How to avoid:**
-1. Do not rely solely on the self-declared `username_bankcode`.
-2. Extract the `window.Telegram.WebApp.initData` query string on the client side and forward it with every backend request (via headers or payload).
-3. In GAS, implement a validation function: parse the `initData` query string, sort the keys alphabetically, concatenate them as `key=value\n` (excluding `hash`), calculate the HMAC-SHA256 signature using the SHA256 of the Bot Token as the key, and verify it matches the received `hash`.
-4. Check that `auth_date` is within a reasonable window (e.g., last 24 hours) to prevent replay attacks.
-
-**Warning signs:**
-- The backend accepts and executes requests from standard HTTP tools (like curl or Postman) without requiring valid Telegram signature headers.
-
-**Phase to address:**
-Phase 2: Authentication & Database Schema.
-
----
-
-### Pitfall 3: Google Sheets Row Overwrites & Concurrent Write Race Conditions
-
-**What goes wrong:**
-When a user adds a deposit or executes a rollover, and another write occurs simultaneously (or the user double-taps the submit button due to UI lag), the second operation overwrites the first, or creates duplicate IDs in the sheet, corrupting the database.
-
-**Why it happens:**
-Google Sheets is not an ACID-compliant transactional relational database. A common code pattern—reading the last row index, calculating the next incremented ID, and calling `appendRow()`—is not atomic. Multiple concurrent executions of this sequence will fetch the same "last row" and write overlapping data.
-
-**How to avoid:**
-Use `LockService` in Google Apps Script to serialize database operations:
+Pass the intermediate `secretKeyBytes` array directly as `Byte[]` into the second `computeHmacSha256Signature` call without converting to a String:
 ```javascript
-var lock = LockService.getScriptLock();
-try {
-  // Wait up to 15 seconds to acquire lock
-  lock.waitLock(15000);
-  
-  // Read sheets, compute IDs, and write data here...
-  
-} catch (e) {
-  Logger.log("Lock acquisition timeout: " + e.toString());
-  throw new Error("Hệ thống đang bận, vui lòng thử lại sau giây lát.");
-} finally {
-  lock.releaseLock();
-}
+// Step 1: secret_key = HMAC-SHA256(key="WebAppData", msg=bot_token)
+// Note: GAS takes (value, key) -> (bot_token, "WebAppData")
+var secretKeyBytes = Utilities.computeHmacSha256Signature(botToken, 'WebAppData');
+
+// Step 2: hash = HMAC-SHA256(key=secretKeyBytes, msg=dataCheckString)
+// Pass secretKeyBytes directly as Byte[] array key parameter!
+var signatureBytes = Utilities.computeHmacSha256Signature(dataCheckString, secretKeyBytes);
+
+var signatureHex = signatureBytes.map(function(b) {
+  var val = b < 0 ? b + 256 : b;
+  return ('0' + val.toString(16)).slice(-2);
+}).join('');
 ```
 
 **Warning signs:**
-- Duplicate IDs in the `Deposits` sheet.
-- Fast successive form submissions lead to missing transaction logs.
+- Direct curl tests with official Telegram test vectors fail on GAS backend while succeeding in Node.js.
+- Legitimate Telegram Web App requests are rejected with authentication errors.
 
 **Phase to address:**
-Phase 3: Deposit CRUD Operations.
+Phase 1: Telegram HMAC Authentication (`AUTH-02`).
 
 ---
 
-### Pitfall 4: Date Parsing & Time Zone Offset Misalignment
+### Pitfall 2: `initData` URL-Encoding Mismatch, Token Expiry, and Local Dev Lockout (`AUTH-02`)
 
 **What goes wrong:**
-A deposit set to mature on `2026-08-10` is saved as `2026-08-09` or `2026-08-11` in the sheet, causing incorrect interest accrual calculations and showing wrong maturity countdowns.
+Backend HMAC verification works during initial manual tests but fails intermittently in Telegram Web App, or breaks local development (`npm run dev` on localhost) completely because `window.Telegram.WebApp.initData` is empty string `""` outside Telegram.
 
 **Why it happens:**
-JavaScript client-side parsed dates use the browser's local timezone. Google Apps Script runs on Google's servers (defaulting to America/New_York or UTC depending on settings), and the Google Spreadsheet itself has its own timezone settings (`File > Settings > Time zone`). If these three timezones don't align, date string parsing (e.g. `new Date("2026-08-10")`) can shift the date by several hours, crossing day boundaries.
+1. **URL Parameter Encoding**: Telegram sends `initData` as a raw query string. If the frontend parses and re-stringifies `initData`, or if GAS `doPost(e)` receives auto-decoded values in `e.parameter`, string escaping differences (e.g. JSON quotes inside `user={"id":...}`) corrupt the byte-for-byte exact `data_check_string` (`key=value\n`).
+2. **`auth_date` Expiration**: Telegram `initData` includes an `auth_date` UNIX timestamp. If the user keeps the Telegram Web App open for over 24 hours, background API requests send stale `initData`, triggering auth failure.
+3. **Local Dev Lockout**: Strict server-side verification blocks developers from testing new frontend features in a desktop browser.
 
 **How to avoid:**
-1. Synchronize timezones: Set both the Google Sheet and Google Apps Script (`appsscript.json`) timezone to `Asia/Ho_Chi_Minh` (UTC+7).
-2. Keep date values as ISO 8601 strings (`YYYY-MM-DD`) during transmission.
-3. Parse and format dates explicitly using utilities (e.g., `Utilities.formatDate` in GAS) rather than relying on default JavaScript date-to-string conversions.
+1. **Transmit Raw String**: Pass raw `window.Telegram.WebApp.initData` unmodified in request body payload (`{ initData: window.Telegram.WebApp.initData, ... }`).
+2. **Backend Decoding**: In GAS, split raw `initData` string by `&`, decode keys and values once, filter out `hash`, sort keys alphabetically, and build `data_check_string`.
+3. **Auth Date Window**: Enforce reasonable `AUTH_EXPIRY_SECONDS` (e.g., 86400 = 24h) and trigger a clear UI prompt when token expires.
+4. **Dev Fallback Guard**: Allow bypass ONLY when `botToken` property is missing or when request carries an explicit developer secret parameter in non-production environments.
 
 **Warning signs:**
-- Saving a deposit with a date shows a different date in the Google Sheet cell, or the Web App UI shows a date one day off from what is in the sheet.
+- `initData` verification fails specifically when user profile contains special characters (spaces, unicode names, quotes).
+- Desktop `npm run dev` displays endless loading spinner or permission denied errors.
 
 **Phase to address:**
-Phase 3: Deposit CRUD Operations.
+Phase 1: Telegram HMAC Authentication (`AUTH-02`).
 
 ---
 
-### Pitfall 5: Web App Executed under Wrong User Identity Context
+### Pitfall 3: Lineage Tree Infinite Recursion Loops & Broken Parent Node Crashes (`HIST-01`)
 
 **What goes wrong:**
-When users open the Telegram Web App, they are prompted with a Google Account Login screen, or they receive a "Permission Denied" error, preventing them from interacting with the bot.
+Opening the deposit lineage tree view freezes the Web App UI or throws `RangeError: Maximum call stack size exceeded` or `TypeError: Cannot read properties of undefined (reading 'amount')`.
 
 **Why it happens:**
-The GAS Web App was deployed with the setting "Execute as: User accessing the webapp". Since Telegram Web App runs in an embedded browser sandbox, the user has no Google session active, and they cannot access the script.
+1. **Circular References in Sheet Data**: Manual editing in Google Sheets or unexpected script behavior can create circular parent-child links (e.g. Deposit A has `parent_id` = B, and Deposit B has `parent_id` = A; or Deposit A has `parent_id` = A). Recursive chain traversal without cycle tracking runs infinitely.
+2. **Orphaned Nodes**: Deposit record specifies `parent_id` pointing to an old ID that was manually deleted from the sheet, causing lookups to return `undefined`.
 
 **How to avoid:**
-When deploying the Web App, always select:
-- **Execute as:** `Me` (your developer Google account, which has access to the Sheet).
-- **Who has access:** `Anyone` (this allows the Telegram webhook/client to communicate with the Apps Script endpoint without needing a Google login).
+1. **Cycle Detection with Visited Set**: Always track visited deposit IDs during lineage tree traversal:
+```typescript
+export function buildLineageTree(depositId: string, allDeposits: Deposit[]): DepositNode {
+  const depositMap = new Map(allDeposits.map(d => [d.id, d]));
+  const visited = new Set<string>();
+
+  function traverse(id: string): DepositNode | null {
+    if (visited.has(id)) {
+      console.warn(`Circular lineage reference detected at ID: ${id}`);
+      return null; // Break circular loop
+    }
+    visited.add(id);
+
+    const current = depositMap.get(id);
+    if (!current) {
+      // Orphan fallback: Return dummy node or handle missing parent gracefully
+      return { id, isMissing: true, children: [] };
+    }
+
+    const children = allDeposits
+      .filter(d => d.parent_id === id)
+      .map(child => traverse(child.id))
+      .filter((node): node is DepositNode => node !== null);
+
+    return { ...current, isMissing: false, children };
+  }
+
+  return traverse(depositId) || { id: depositId, isMissing: true, children: [] };
+}
+```
+2. **Graceful UI Rendering**: Render missing parent nodes as "Khoản gốc đã xóa (N/A)" cards instead of throwing unhandled null pointer exceptions.
 
 **Warning signs:**
-- Opening the Web App URL inside a private browser window prompts for Google sign-in.
+- Browser tab memory spikes and freezes when tapping "Xem phả hệ" on a historical deposit.
+- Uncaught TypeError in console: `Cannot read properties of undefined`.
 
 **Phase to address:**
-Phase 1: Setup & Web App Integration.
+Phase 3: Deposit Lineage Tree View (`HIST-01`).
+
+---
+
+### Pitfall 4: Chart.js Canvas Re-render Leaks & Telegram Dark/Light Mode Invisibility (`STAT-02`)
+
+**What goes wrong:**
+1. Navigating between tabs or toggling analytics options causes console error: `Canvas is already in use. Chart with ID 'X' must be destroyed before the canvas can be reused`.
+2. When user switches Telegram theme (Dark to Light or vice versa), chart text, gridlines, and legends become invisible (e.g., black text on dark background).
+
+**Why it happens:**
+1. **Missing Cleanup**: React re-renders canvas components without destroying existing Chart.js instances bound to the HTML canvas context.
+2. **Static Color Configurations**: Hardcoding hex color strings (`#708499`, `#17212b`) inside Chart.js initial options prevents charts from adapting to dynamic Telegram theme changes (`var(--tg-theme-text-color)` or `Telegram.WebApp.colorScheme`).
+
+**How to avoid:**
+1. **Chart Reference Cleanup**: Always store the instance in a React `useRef` and execute `chartInstanceRef.current.destroy()` in the `useEffect` cleanup return:
+```typescript
+useEffect(() => {
+  if (!canvasRef.current) return;
+  if (chartInstanceRef.current) {
+    chartInstanceRef.current.destroy();
+  }
+  const ctx = canvasRef.current.getContext('2d');
+  if (!ctx) return;
+
+  chartInstanceRef.current = new Chart(ctx, { /* options */ });
+
+  return () => {
+    if (chartInstanceRef.current) {
+      chartInstanceRef.current.destroy();
+      chartInstanceRef.current = null;
+    }
+  };
+}, [deposits, theme]);
+```
+2. **Theme Awareness**: Read Telegram Web App CSS variables or listen to theme change events `window.Telegram.WebApp.onEvent('themeChanged', reRenderCharts)` to dynamic update chart colors.
+
+**Warning signs:**
+- Red error logs in browser console whenever state changes.
+- Chart labels disappear or become unreadable when Telegram client toggles night mode.
+
+**Phase to address:**
+Phase 2: Portfolio Analytics (`STAT-02`).
+
+---
+
+### Pitfall 5: Portfolio Analytics Double-Counting Historical `rolled_over` Deposits (`STAT-02`)
+
+**What goes wrong:**
+Portfolio breakdown charts (Bank Share, Term Allocation, Interest Comparison) show inflated total assets (e.g., displaying 500M ₫ instead of actual 100M ₫ current savings).
+
+**Why it happens:**
+In Google Sheets, when a deposit is rolled over, the old deposit status changes to `rolled_over` and a new `active` deposit is created. If portfolio analytics functions compute sums across the entire `Deposits` array without filtering `d.status === 'active'`, historical principal amounts that have already been reinvested are summed again alongside new active deposits.
+
+**How to avoid:**
+Strictly scope portfolio breakdown charts and total net worth calculations to active deposits:
+```typescript
+// Correct: Only sum active (or matured pending action) deposits for current portfolio breakdown
+const activeDeposits = deposits.filter(d => d.status === 'active' || d.status === 'matured');
+```
+Keep timeseries growth charts (`GrowthChart`) distinct from current portfolio allocation breakdown charts (`BankShareChart`, `TermShareChart`).
+
+**Warning signs:**
+- Total asset sum in bank distribution chart does not match the active balance shown on the main list view.
+
+**Phase to address:**
+Phase 2: Portfolio Analytics (`STAT-02`).
+
+---
+
+### Pitfall 6: Single-File Bundle Bloat & Mobile Touch Gesture Conflicts on Tree / Chart Canvas (`HIST-01` & `STAT-02`)
+
+**What goes wrong:**
+1. Adding heavy graph visualization libraries (e.g., D3.js, React Flow, vis.js) increases the built `index.html` size beyond 2MB, causing slow initial loads inside Telegram Web App on mobile connections.
+2. Panning or dragging wide lineage tree canvas horizontally triggers Telegram Web App's native "swipe-down to dismiss" gesture, closing the Mini App unexpectedly.
+
+**Why it happens:**
+1. `vite-plugin-singlefile` inlines all JS, CSS, and SVG assets into a single document. Heavy external tree packages bring large bundle dependencies.
+2. Telegram Web App intercepts vertical/horizontal drag gestures on canvas elements unless viewport expansion and scroll locks are enabled via Telegram SDK.
+
+**How to avoid:**
+1. **Lightweight Custom Tree Component**: Build the lineage tree using plain React components, CSS flexbox/grid, and SVG connector lines instead of pulling in multi-megabyte node-graph packages.
+2. **Telegram Viewport & Gesture Configuration**:
+```typescript
+import { expandViewport } from '@telegram-apps/sdk';
+
+// On app initialization:
+try {
+  expandViewport(); // Expand to max height
+} catch (e) { /* ignore fallback */ }
+```
+Add CSS `touch-action: pan-x pan-y` on container elements to prevent native pull-to-close behavior during touch navigation.
+
+**Warning signs:**
+- `dist/index.html` size exceeds 1.5MB after running `npm run build`.
+- Swiping across lineage tree view accidentally exits Telegram Mini App.
+
+**Phase to address:**
+Phase 3: Lineage Tree & Mobile UX.
 
 ---
 
 ## Technical Debt Patterns
 
-Shortcuts that seem reasonable but create long-term problems.
-
 | Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
 |----------|-------------------|----------------|-----------------|
-| **Using Sheet row index as Deposit ID** | Simple to implement, no ID generator needed. | Row deletions or manual sorts destroy ID references; breaks relations to Users sheet. | **Never.** Use unique IDs (UUIDs or `t-[timestamp]-[random]`). |
-| **Storing all JS & CSS inline in `Index.html`** | Single file deployment, simple to copy-paste into GAS editor. | Difficult to format, test, and manage as CSS and JS libraries grow. | **Only in MVP.** Refactor to separate files and use Google's script evaluation to include them (`HtmlService.createHtmlOutputFromFile`). |
-| **Direct client-side manipulation of Sheets** | Faster response time bypassing App Script backend logic. | Vulnerable to client-side injection; business logic leaks; no write locks. | **Never.** Keep all validation and calculations (like interest formulas) on the Apps Script server side. |
-| **Calculated expected interest on client-side** | Avoids GAS computation lag. | Discrepancies between database records and UI representation; risk of user-manipulated values. | **Never.** Compute interest on the server when creating/updating the record. |
+| **Client-side HMAC Validation** | Avoids writing GAS HMAC script logic. | Zero security — tokens can be spoofed or bypassed in browser DevTools. | **Never.** Backend MUST validate `initData`. |
+| **Omitting Cycle Detection in Tree Traversal** | Cleaner, shorter recursive function. | Infinite loops freeze app if Sheet data contains circular `parent_id` links. | **Never.** Always use a `visited` Set. |
+| **Hardcoding Chart Colors in Hex** | Faster styling during setup. | Invisible chart text when user switches Telegram Light/Dark themes. | **Only in initial prototype.** Use CSS variables or dynamic theme helper. |
+| **Rendering Entire Lineage History in Single Un-paginated Tree** | Simple implementation. | DOM lag on deposits with 10+ consecutive rollovers on low-end mobile devices. | **Acceptable for <20 nodes.** |
+
+---
 
 ## Integration Gotchas
 
-Common mistakes when connecting to external services.
-
 | Integration | Common Mistake | Correct Approach |
 |-------------|----------------|------------------|
-| **Telegram Bot API** | Exposing the Telegram Bot Token inside client-side JS or Web App HTML. | Keep the Bot Token strictly inside the server-side GAS script properties (`PropertiesService.getScriptProperties()`). |
-| **Telegram Web App SDK** | Not calling `window.Telegram.WebApp.ready()` on initialization. | Execute `ready()` as soon as the DOM is loaded to notify the Telegram client to compute viewport height and theme variables. |
-| **Google Sheets API** | Using string formats of numbers (e.g. `$1,000` or `1.000.000đ`) in data calculations. | Store raw numeric values in the sheet. Let Sheets handle format styling via cell UI, and parse numeric values in GAS backend. |
-| **Telegram Web App Theme** | Hardcoding background/font colors in CSS. | Use Telegram's native theme variables (e.g. `var(--tg-theme-bg-color)`, `var(--tg-theme-text-color)`) so the UI adapts automatically to light/dark mode. |
+| **Telegram `initData` Verification** | Parsing parameters via `e.parameter` in GAS `doPost`. GAS decodes values automatically, corrupting raw string signature check. | Send raw `initData` string inside JSON body `{ initData: "..." }`. Decode parameters manually once in `AuthService.js`. |
+| **Chart.js React 19 Binding** | Re-creating `new Chart()` on state update without calling `.destroy()` on unmount/re-render. | Store instance in `useRef<Chart | null>(null)` and call `chartInstanceRef.current?.destroy()` in `useEffect` cleanup. |
+| **GAS `LockService` & Auth Guard** | Acquiring `ScriptLock` BEFORE verifying HMAC authentication. | Validate HMAC `initData` signature **BEFORE** acquiring script lock to prevent unauthenticated requests from locking the DB. |
+| **Telegram Web App Theme Sync** | Reading `window.Telegram.WebApp.colorScheme` once on load without event listener. | Listen to `themeChanged` event to update active Chart.js instance color settings dynamically. |
+
+---
 
 ## Performance Traps
 
-Patterns that work at small scale but fail as usage grows.
-
 | Trap | Symptoms | Prevention | When It Breaks |
 |------|----------|------------|----------------|
-| **Cell-by-Cell Read/Write Loops** | Extremely slow response times (>5 seconds); script execution timeout errors. | Retrieve data using `sheet.getValues()` into a 2D array, perform edits, and write back in one operation using `sheet.setValues()`. | **> 50 records.** Slowdowns are noticeable even at small datasets. |
-| **Full Sheet scan for specific users** | High memory usage; request latency. | Create a fast lookup index or filter rows in memory using JavaScript arrays rather than calling Sheets search functions repeatedly. | **> 500 deposits.** |
-| **Recalculating Timeseries Chart Data on demand** | Chart loading delays when users open the Web App. | Store aggregated stats or cache the computed values in Apps Script CacheService for fast reads. | **> 1 year of daily historical data.** |
+| **Un-indexed Lineage Tree Lookups** | `Array.find()` called repeatedly inside recursive tree traversal (O(N^2) complexity). | Pre-build `Map<id, Deposit>` and `Map<parent_id, Deposit[]>` lookup tables before rendering tree. | **> 50 deposit records.** |
+| **Chart.js Re-animation on Every Render** | Smooth animation lag & battery drain when switching tabs or filtering lists. | Disable Chart.js animation (`animation: false`) or limit to initial mount. | Low-end mobile devices. |
+| **Server-side Tree Building in GAS** | Processing tree JSON on GAS server adds latency to `doPost` execution. | Send flat array of deposits from GAS; build tree structure in client-side React SPA. | When deposit history expands. |
+
+---
 
 ## Security Mistakes
 
-Domain-specific security issues beyond general web security.
-
 | Mistake | Risk | Prevention |
 |---------|------|------------|
-| **Exposing GAS deployment URL publicly without auth** | Unauthorized data editing or theft. | Restrict processing of `doPost`/`doGet` routes to requests that carry a verified Telegram `initData` payload or a valid session token. |
-| **Leaking bankcodes/usernames in client-side logs** | Disclosure of user keys to anyone who can open DevTools. | Do not log `username_bankcode` to `console.log`. Only log clean validation outcomes (e.g., `auth: true`). |
-| **Saving Plaintext Session Tokens on Client** | Hijacking of authenticated sessions. | Leverage Telegram Web App's native context lifecycle; re-validate `initData` on critical transitions rather than storing custom cookies. |
+| **Accepting Unsigned Backend Requests** | Malicious users can hit public GAS `/exec` URL and tamper with deposit records. | Enforce strict HMAC-SHA256 `initData` verification on every state-modifying POST route in GAS. |
+| **Exposing Bot Token in Client Code** | Full compromise of Telegram Bot and Webhook control. | Keep Telegram Bot Token strictly inside GAS `PropertiesService.getScriptProperties().getProperty('BOT_TOKEN')`. |
+| **Ignoring `auth_date` Timestamp Expiry** | Stale stolen `initData` query strings remain valid indefinitely. | Check `currentTime - authDate <= 86400` (24 hours) in backend verification. |
+
+---
 
 ## UX Pitfalls
 
-Common user experience mistakes in this domain.
-
 | Pitfall | User Impact | Better Approach |
 |---------|-------------|-----------------|
-| **No loading indicator during backend calls** | User thinks the button did not work, double-submits, or exits the bot. | Disable buttons and display a spinner immediately upon submission while awaiting the `google.script.run` callback. |
-| **No Viewport Adaptation** | The keyboard covers the deposit input form on mobile screens, hiding what the user is typing. | Use Telegram viewport parameters, ensure inputs are centered or scrolled into view, and disable zoom styling. |
-| **Failure to close Web App after success** | User is stuck on a static "Success" page and must manually tap Close. | Call `Telegram.WebApp.close()` automatically 1-2 seconds after confirming a successful deposit write. |
+| **Unresponsive Lineage Tree Layout** | Tree node labels overlap or overflow offscreen on small mobile screens. | Use a vertical card-based tree list with collapsible child nodes and clear vertical connector lines. |
+| **Chart Legend Overcrowding** | Bank allocation doughnut chart legend takes up 70% of mobile screen height. | Display compact legend list with top 5 banks and group remaining into "Khác". |
+| **Silent Auth Failure** | User sees endless spinner without feedback when HMAC validation fails. | Show clear error card: *"Xác thực Telegram không hợp lệ. Vui lòng mở lại ứng dụng từ Telegram Bot."* |
+
+---
 
 ## "Looks Done But Isn't" Checklist
 
-Things that appear complete but are missing critical pieces.
+- [ ] **HMAC Verification:** Tested and verified with raw Telegram `initData` on both iOS and Android Telegram clients.
+- [ ] **Local Dev Mode:** `npm run dev` in local desktop browser works seamlessly without being blocked by HMAC auth guard.
+- [ ] **Multi-generation Lineage:** Tested lineage tree with 3+ consecutive rollovers (A → B → C → D) and verified no recursion stack overflow occurs.
+- [ ] **Orphan Link Fallback:** Tested lineage display when a parent deposit ID is missing from database; app renders node gracefully without crashing.
+- [ ] **Asset Sum Consistency:** Total assets in Bank Allocation chart exactly match the sum of active deposits in list view.
+- [ ] **Chart Memory Leak Audit:** Switching tabs 20 times does not cause canvas memory leaks or Chart.js ID errors in console.
+- [ ] **Dark / Light Mode Switching:** Toggling Telegram night mode dynamically updates Chart.js text colors without requiring app reload.
 
-- [ ] **Rollover Execution:** Appears to work because the active deposit amount is updated, but it is missing the creation of a historical record in a log sheet — verify that old data is saved in a history table.
-- [ ] **Mobile Responsive Layout:** Form looks correct in desktop browser inspect tool, but has broken margins on small iPhone SE or Android screens — verify layout on real mobile Telegram clients.
-- [ ] **Keyboard Interactivity:** Inputs work on desktop, but focus is lost or container scrolls incorrectly when mobile keyboard is toggled — verify input scrolling behaves correctly.
-- [ ] **Token Expiry Handling:** App works fine on first launch, but breaks after 24 hours of inactivity due to cached obsolete credentials — verify token validation handles expiry gracefully.
+---
 
 ## Recovery Strategies
 
-When pitfalls occur despite prevention, how to recover.
-
 | Pitfall | Recovery Cost | Recovery Steps |
 |---------|---------------|----------------|
-| **Corrupted Sheets Data (Overwrite/Concurrent Write)** | LOW | Leverage Google Sheets Version History (`File > Version history`) to roll back to the state prior to corruption. |
-| **Compromised Telegram Bot Token** | MEDIUM | Revoke token via `@BotFather`, generate a new one, and update it in Apps Script properties. |
-| **Stuck Web App Cached Code** | LOW | Force a re-deploy with a brand new Version in Apps Script and update the webhook URL. |
-| **Date Timezone Shift (One day offset across all dates)** | MEDIUM | Export data, run a repair script in GAS to shift timestamps (+/- Hours) matching `Asia/Ho_Chi_Minh`, adjust sheet timezone settings, and re-import. |
+| **HMAC Validation Lockout** | LOW | Check `BOT_TOKEN` in GAS Script Properties; verify `Utilities.computeHmacSha256Signature` argument order `(dataCheckString, secretKeyBytes)`; re-deploy via `clasp push`. |
+| **Corrupted Lineage References** | MEDIUM | Run a backend repair function in GAS to audit `parent_id`/`child_id` integrity in `Deposits` sheet and clean up broken reference strings. |
+| **Bundle Size Build Failure** | LOW | Replace heavy external tree/chart packages with native React SVG/CSS components; verify bundle size with `vite-plugin-singlefile`. |
+
+---
 
 ## Pitfall-to-Phase Mapping
 
-How roadmap phases should address these pitfalls.
-
 | Pitfall | Prevention Phase | Verification |
 |---------|------------------|--------------|
-| **Caching & Identity Context** | Phase 1: Setup & Web App Integration | Test deploying Web App, opening URL in Incognito browser, and editing text to ensure changes propagate. |
-| **Authentication Bypass** | Phase 2: Authentication & Database Schema | Attempt to curl the Apps Script endpoint with missing/altered `initData` parameters and confirm it rejects the request. |
-| **Timezone Shifts** | Phase 2: Authentication & Database Schema | Save a test date from the web app client, read it back, and check that the sheet shows exact expected date cells in UTC+7. |
-| **Concurrent Writes** | Phase 3: Deposit CRUD Operations | Trigger concurrent asynchronous HTTP post requests to write deposits and verify that `LockService` serializes them. |
-| **No Viewport/Keyboard Adaptation** | Phase 4: UI & Telegram Web App Integration | Open the form on a mobile device, focus inputs, and verify keyboard does not cover the Save button. |
+| **HMAC Binary Key & Arg Order** | Phase 1: Authentication (`AUTH-02`) | Run GAS test function in `Tests.js` against official Telegram HMAC test payload; confirm signature matches. |
+| **Local Dev Lockout & Expiry** | Phase 1: Authentication (`AUTH-02`) | Test both local browser `npm run dev` and Telegram Web App client; confirm both function cleanly. |
+| **Chart Canvas Reuse & Leaking** | Phase 2: Portfolio Analytics (`STAT-02`) | Repeatedly toggle Analytics charts on/off in SPA; verify zero console errors or canvas ID warnings. |
+| **Asset Double-Counting** | Phase 2: Portfolio Analytics (`STAT-02`) | Execute a deposit rollover; verify total bank allocation pie chart sum remains constant and matches active deposit sum. |
+| **Lineage Infinite Loops** | Phase 3: Lineage Tree (`HIST-01`) | Add a test row with circular `parent_id` in Sheet; verify app renders fallback without freezing browser tab. |
+| **Single-File Bundle Bloat** | Phase 3: Lineage Tree & UX Polish | Run `npm run build` and confirm `dist/index.html` size is under 1.5MB. |
+
+---
 
 ## Sources
 
-- [Google Apps Script Web Apps Documentation](https://developers.google.com/apps-script/guides/web)
-- [Telegram Web Apps Documentation](https://core.telegram.org/bots/webapps)
-- [Google Apps Script Lock Service Guide](https://developers.google.com/apps-script/reference/lock/lock-service)
-- [Managing Timezones in Google Sheets & GAS](https://developers.google.com/apps-script/guides/support/troubleshooting#time-zones)
+- [Telegram Web Apps SDK & Authentication Documentation](https://core.telegram.org/bots/webapps#validating-data-received-via-the-web-app)
+- [Google Apps Script Utilities Reference (`computeHmacSha256Signature`)](https://developers.google.com/apps-script/reference/utilities/utilities#computehmacsha256signaturevalue,-key)
+- [Chart.js Integration & Lifecycle Management in React](https://www.chartjs.org/docs/latest/getting-started/integration.html)
+- [Vite Single-File Plugin GitHub Repository](https://github.com/richardtallent/vite-plugin-singlefile)
 
 ---
-*Pitfalls research for: Save Manager (Google Apps Script + Google Sheet + Telegram Web App)*
-*Researched: 2026-07-10*
+*Pitfalls research updated for: Save Manager v2.0 (Google Apps Script + Google Sheet + React Telegram Web App)*
+*Researched: 2026-08-11*

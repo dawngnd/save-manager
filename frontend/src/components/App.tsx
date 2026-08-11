@@ -7,20 +7,41 @@ import { BankSummaryChart } from './BankSummaryChart';
 import { InterestRateChart } from './InterestRateChart';
 import { BankShareChart } from './BankShareChart';
 import { UserShareChart } from './UserShareChart';
+import { TermShareChart } from './TermShareChart';
+import { WairKpiCard } from './WairKpiCard';
 import { GoldForm } from './GoldForm';
 import { GoldList } from './GoldList';
 import { retrieveLaunchParams } from '@telegram-apps/sdk';
 import { Deposit, GoldPrice } from '../types';
 import { useDepositsCache } from '../hooks/useDepositsCache';
 import { useGoldsCache } from '../hooks/useGoldsCache';
-import { getGoldPrice } from '../api';
+import { getGoldPrice, AuthError } from '../api';
+// Lock icon SVG component (inline to avoid lucide-react dependency)
+const LockIcon: React.FC<{ size?: number; className?: string }> = ({ size = 64, className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+  </svg>
+);
 
-type ActiveTab = 'deposits' | 'gold';
+// Telegram WebApp type declaration
+declare global {
+  interface Window {
+    Telegram?: {
+      WebApp?: {
+        close: () => void;
+      };
+    };
+  }
+}
+
+type ActiveTab = 'deposits' | 'gold' | 'analytics';
 
 export const App: React.FC = () => {
   const { deposits, loading, error, refresh } = useDepositsCache();
   const { golds, loading: goldsLoading, error: goldsError, refresh: refreshGolds } = useGoldsCache();
 
+  const [isUnauthorized, setIsUnauthorized] = useState<boolean>(false);
   const [activeTab, setActiveTab]           = useState<ActiveTab>('deposits');
   const [isFormOpen, setIsFormOpen]         = useState<boolean>(false);
   const [isRolloverOpen, setIsRolloverOpen] = useState<boolean>(false);
@@ -77,7 +98,18 @@ export const App: React.FC = () => {
     if (viewParam === 'chart' || startParam === 'chart') {
       setShowChart(true);
     }
-  }, []);
+
+    const initFetch = async () => {
+      try {
+        await refresh();
+      } catch (err: any) {
+        if (err instanceof AuthError || err?.name === 'AuthError') {
+          setIsUnauthorized(true);
+        }
+      }
+    };
+    initFetch();
+  }, [refresh]);
 
   const handleRefreshGoldPrice = async (forceRefresh = true) => {
     setGoldPriceLoading(true);
@@ -109,6 +141,30 @@ export const App: React.FC = () => {
     setRolloverDeposit(deposit);
     setIsRolloverOpen(true);
   };
+
+  if (isUnauthorized) {
+    return (
+      <div className="min-h-screen bg-[#17212b] text-[#f5f5f5] font-sans flex flex-col items-center justify-center p-4">
+        <div className="bg-[#0e1621] border border-[#2b394a] rounded-2xl p-8 max-w-sm w-full text-center space-y-6 shadow-2xl">
+          <div className="flex justify-center">
+            <LockIcon size={64} className="text-[#ff4d4d]" />
+          </div>
+          <h1 className="text-xl font-bold text-white">Không có quyền truy cập</h1>
+          <p className="text-sm text-[#708499]">Bạn không có trong danh sách được phép sử dụng ứng dụng này.</p>
+          <button
+            onClick={() => {
+              if (window.Telegram?.WebApp) {
+                window.Telegram.WebApp.close();
+              }
+            }}
+            className="w-full py-3 px-4 bg-[#ff4d4d]/20 hover:bg-[#ff4d4d]/30 text-[#ff4d4d] font-bold rounded-xl transition duration-150"
+          >
+            Đóng
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#17212b] text-[#f5f5f5] font-sans pb-24">
@@ -201,6 +257,16 @@ export const App: React.FC = () => {
             }`}
           >
             🥇 Vàng
+          </button>
+          <button
+            onClick={() => setActiveTab('analytics')}
+            className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition cursor-pointer ${
+              activeTab === 'analytics'
+                ? 'bg-[#4caf50] text-white shadow'
+                : 'text-[#708499] hover:text-[#f5f5f5]'
+            }`}
+          >
+            📊 Analytics
           </button>
         </div>
 
@@ -323,6 +389,31 @@ export const App: React.FC = () => {
               )}
             </div>
           </>
+        )}
+
+        {/* ══════════ TAB: ANALYTICS ══════════ */}
+        {activeTab === 'analytics' && (
+          <div className="space-y-5">
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-16 space-y-3">
+                <div className="w-7 h-7 border-3 border-[#4caf50] border-t-transparent rounded-full animate-spin"></div>
+                <p className="text-xs text-[#708499] animate-pulse">Đang truy vấn dữ liệu...</p>
+              </div>
+            ) : error ? (
+              <div className="bg-[#ff4d4d]/10 border border-[#ff4d4d]/20 text-[#ff4d4d] text-center p-4 rounded-xl space-y-2 text-xs">
+                <p>{error}</p>
+                <button onClick={refresh} className="px-4 py-1.5 bg-[#ff4d4d]/25 hover:bg-[#ff4d4d]/30 text-white rounded-lg font-semibold transition">
+                  Thử lại
+                </button>
+              </div>
+            ) : (
+              <>
+                <WairKpiCard deposits={deposits} />
+                <BankShareChart deposits={deposits} />
+                <TermShareChart deposits={deposits} />
+              </>
+            )}
+          </div>
         )}
 
         {/* FAB — hiển thị theo tab */}
