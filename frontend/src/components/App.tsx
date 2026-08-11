@@ -14,7 +14,24 @@ import { Deposit, GoldPrice } from '../types';
 import { useDepositsCache } from '../hooks/useDepositsCache';
 import { useGoldsCache } from '../hooks/useGoldsCache';
 import { getGoldPrice, AuthError } from '../api';
-import { Lock } from 'lucide-react';
+// Lock icon SVG component (inline to avoid lucide-react dependency)
+const LockIcon: React.FC<{ size?: number; className?: string }> = ({ size = 64, className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+  </svg>
+);
+
+// Telegram WebApp type declaration
+declare global {
+  interface Window {
+    Telegram?: {
+      WebApp?: {
+        close: () => void;
+      };
+    };
+  }
+}
 
 type ActiveTab = 'deposits' | 'gold';
 
@@ -128,7 +145,7 @@ export const App: React.FC = () => {
       <div className="min-h-screen bg-[#17212b] text-[#f5f5f5] font-sans flex flex-col items-center justify-center p-4">
         <div className="bg-[#0e1621] border border-[#2b394a] rounded-2xl p-8 max-w-sm w-full text-center space-y-6 shadow-2xl">
           <div className="flex justify-center">
-            <Lock size={64} className="text-[#ff4d4d]" />
+            <LockIcon size={64} className="text-[#ff4d4d]" />
           </div>
           <h1 className="text-xl font-bold text-white">Không có quyền truy cập</h1>
           <p className="text-sm text-[#708499]">Bạn không có trong danh sách được phép sử dụng ứng dụng này.</p>
