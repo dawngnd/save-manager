@@ -132,6 +132,40 @@ function getResponseData(response) {
 // Test cases
 // ============================================================
 
+/**
+ * Hàm sinh chuỗi initData giả lập cho test để pass qua bước xác thực HMAC
+ * @param {number|string} chatId 
+ * @param {string} botToken 
+ * @returns {string} chuỗi query initData
+ */
+function generateMockInitData(chatId, botToken) {
+  var authDate = Math.floor(Date.now() / 1000);
+  var userJson = JSON.stringify({ id: chatId, first_name: "TestUser" });
+  
+  var params = {
+    auth_date: authDate.toString(),
+    query_id: "mock_query",
+    user: userJson
+  };
+  
+  var sortedKeys = Object.keys(params).sort();
+  var dataCheckString = sortedKeys.map(function(k) { return k + '=' + params[k]; }).join('\n');
+  
+  var secretKeyBytes = Utilities.computeHmacSha256Signature(botToken, 'WebAppData');
+  var keyString = secretKeyBytes.map(function(b) {
+    return String.fromCharCode(b < 0 ? b + 256 : b);
+  }).join('');
+  
+  var signatureBytes = Utilities.computeHmacSha256Signature(dataCheckString, keyString);
+  var hash = signatureBytes.map(function(b) {
+    var val = b < 0 ? b + 256 : b;
+    return ('0' + val.toString(16)).slice(-2);
+  }).join('');
+  
+  return 'query_id=' + params.query_id + '&user=' + encodeURIComponent(userJson) + '&auth_date=' + authDate + '&hash=' + hash;
+}
+
+
 function testDateUtilsParse() {
   Logger.log('Chạy: testDateUtilsParse');
   var dateObj = DateUtils.parse('15/08/2026');
@@ -276,11 +310,15 @@ function testDoPostRouting() {
       return {
         getProperty: function(k) {
           if (k === PROP_WORKER_SECRET) return 'test_worker_secret';
+          if (k === PROP_TELEGRAM_BOT_TOKEN) return 'test_bot_token';
+          if (k === PROP_ALLOWED_CHAT_IDS) return JSON.stringify([123456789, 556677]);
           return null;
         }
       };
     }
   };
+
+  var validInitData = generateMockInitData(123456789, 'test_bot_token');
 
   try {
     // 1. Dữ liệu trống
@@ -304,6 +342,7 @@ function testDoPostRouting() {
         contents: JSON.stringify({
           action: 'get_deposits',
           username_bankcode: 'user1_vcb',
+          initData: validInitData,
           _serverSecret: 'test_worker_secret'
         })
       }
@@ -318,6 +357,7 @@ function testDoPostRouting() {
           action: 'add_deposit',
           username_bankcode: 'user1_vcb',
           data: { amount: 1000000, interest_rate: 6.0, created_at: '10/07/2026', maturity_at: '10/07/2027' },
+          initData: validInitData,
           _serverSecret: 'test_worker_secret'
         })
       }
@@ -336,12 +376,42 @@ function testDoPostRouting() {
           new_interest_rate: 5.5,
           created_at: '10/07/2027',
           maturity_at: '10/07/2028',
+          initData: validInitData,
           _serverSecret: 'test_worker_secret'
         })
       }
     };
     response = getResponseData(doPost(rolloverEvent));
     assert(response.status === 'success', 'rollover_deposit phải thành công');
+
+    // 6. Test Whitelist Fail
+    var failInitData = generateMockInitData(999999, 'test_bot_token');
+    var failEvent = {
+      postData: {
+        contents: JSON.stringify({
+          action: 'get_deposits',
+          username_bankcode: 'user1_vcb',
+          initData: failInitData,
+          _serverSecret: 'test_worker_secret'
+        })
+      }
+    };
+    response = getResponseData(doPost(failEvent));
+    assert(response.status === 'error', 'Không trong whitelist phải trả về error');
+    assert(response.message === 'Unauthorized', 'Thông báo phải là Unauthorized');
+    
+    // 7. Test fallback HMAC auth (no _serverSecret)
+    var fallbackEvent = {
+      postData: {
+        contents: JSON.stringify({
+          action: 'get_deposits',
+          username_bankcode: 'user1_vcb',
+          initData: validInitData
+        })
+      }
+    };
+    response = getResponseData(doPost(fallbackEvent));
+    assert(response.status === 'success', 'Fallback HMAC auth thành công');
 
   } finally {
     SheetManager.initializeSheets = originalInitSheets;
@@ -553,7 +623,7 @@ function testDoPostTelegramWebhook() {
           username_bankcode: 'user2_tcb',
           telegram_chat_id: '556677',
           _serverSecret: 'test_worker_secret',
-          initData: 'user=' + encodeURIComponent(JSON.stringify({ id: 556677 }))
+          initData: generateMockInitData(556677, 'bot_token_abc')
         })
       }
     };
