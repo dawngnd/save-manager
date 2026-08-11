@@ -7,6 +7,8 @@ import { BankSummaryChart } from './BankSummaryChart';
 import { InterestRateChart } from './InterestRateChart';
 import { BankShareChart } from './BankShareChart';
 import { UserShareChart } from './UserShareChart';
+import { TermShareChart } from './TermShareChart';
+import { WairKpiCard } from './WairKpiCard';
 import { GoldForm } from './GoldForm';
 import { GoldList } from './GoldList';
 import { retrieveLaunchParams } from '@telegram-apps/sdk';
@@ -33,7 +35,7 @@ declare global {
   }
 }
 
-type ActiveTab = 'deposits' | 'gold';
+type ActiveTab = 'deposits' | 'gold' | 'analytics';
 
 export const App: React.FC = () => {
   const { deposits, loading, error, refresh } = useDepositsCache();
@@ -256,6 +258,16 @@ export const App: React.FC = () => {
           >
             🥇 Vàng
           </button>
+          <button
+            onClick={() => setActiveTab('analytics')}
+            className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition cursor-pointer ${
+              activeTab === 'analytics'
+                ? 'bg-[#4caf50] text-white shadow'
+                : 'text-[#708499] hover:text-[#f5f5f5]'
+            }`}
+          >
+            📊 Analytics
+          </button>
         </div>
 
         {/* ══════════ TAB: TIẾT KIỆM ══════════ */}
@@ -377,6 +389,31 @@ export const App: React.FC = () => {
               )}
             </div>
           </>
+        )}
+
+        {/* ══════════ TAB: ANALYTICS ══════════ */}
+        {activeTab === 'analytics' && (
+          <div className="space-y-5">
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-16 space-y-3">
+                <div className="w-7 h-7 border-3 border-[#4caf50] border-t-transparent rounded-full animate-spin"></div>
+                <p className="text-xs text-[#708499] animate-pulse">Đang truy vấn dữ liệu...</p>
+              </div>
+            ) : error ? (
+              <div className="bg-[#ff4d4d]/10 border border-[#ff4d4d]/20 text-[#ff4d4d] text-center p-4 rounded-xl space-y-2 text-xs">
+                <p>{error}</p>
+                <button onClick={refresh} className="px-4 py-1.5 bg-[#ff4d4d]/25 hover:bg-[#ff4d4d]/30 text-white rounded-lg font-semibold transition">
+                  Thử lại
+                </button>
+              </div>
+            ) : (
+              <>
+                <WairKpiCard deposits={deposits} />
+                <BankShareChart deposits={deposits} />
+                <TermShareChart deposits={deposits} />
+              </>
+            )}
+          </div>
         )}
 
         {/* FAB — hiển thị theo tab */}

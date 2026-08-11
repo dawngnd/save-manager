@@ -21,7 +21,7 @@
 ### 🚧 v2.0 Polish & Analytics (Phases 6-8)
 
 - [x] **Phase 6: Security & Whitelist Authentication** - Xác thực HMAC-SHA256 trên GAS backend, kiểm tra auth_date 24h, whitelist chat_id trong GAS Script Properties và hỗ trợ Mock Auth dev mode.
-- [ ] **Phase 7: Portfolio Analytics & Asset Metrics** - Biểu đồ Doughnut phân bổ tài sản theo ngân hàng/kỳ hạn và thẻ chỉ số lãi suất trung bình gia quyền (WAIR).
+- [x] **Phase 7: Portfolio Analytics & Asset Metrics** - Biểu đồ Doughnut phân bổ tài sản theo ngân hàng/kỳ hạn và thẻ chỉ số lãi suất trung bình gia quyền (WAIR).
 - [ ] **Phase 8: Deposit Lineage Tree & History** - Duyệt phả hệ 2 chiều khoản gửi tái tục, hiển thị sơ đồ cây timeline tree UI và tổng lãi tích lũy/hệ số tăng trưởng.
 
 ---
@@ -69,5 +69,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | 4. Frontend UI (TWA) & Auth | v1.0 | 3/3 | Complete | 2026-07-10 |
 | 5. Charts & Rollover Mechanics | v1.0 | 2/2 | Complete | 2026-07-10 |
 | 6. Security & Whitelist Authentication | v2.0 | 1/1 | Complete | 2026-08-11 |
-| 7. Portfolio Analytics & Asset Metrics | v2.0 | 0/0 | Not started | — |
+| 7. Portfolio Analytics & Asset Metrics | v2.0 | 1/1 | Complete | 2026-08-11 |
 | 8. Deposit Lineage Tree & History | v2.0 | 0/0 | Not started | — |

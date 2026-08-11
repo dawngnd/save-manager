@@ -232,7 +232,7 @@ export const TermShareChart: React.FC<TermShareChartProps> = ({ deposits }) => {
           </div>
 
           <div className="space-y-1.5 pt-1">
-            {termData.map((data, i) => (
+            {termData.map((data) => (
               <div key={data.bucket} className="flex items-center justify-between text-xs px-1">
                 <div className="flex items-center gap-2">
                   <span
