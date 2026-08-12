@@ -68,27 +68,27 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CALC-01 | — | Pending |
-| CALC-02 | — | Pending |
-| CALC-03 | — | Pending |
-| CALC-04 | — | Pending |
-| CALC-05 | — | Pending |
-| VIS-01 | — | Pending |
-| VIS-02 | — | Pending |
-| VIS-03 | — | Pending |
-| VIS-04 | — | Pending |
-| VIS-05 | — | Pending |
-| CONF-01 | — | Pending |
-| CONF-02 | — | Pending |
-| CONF-03 | — | Pending |
-| CONF-04 | — | Pending |
-| INTG-01 | — | Pending |
+| CALC-01 | Phase 9 | Pending |
+| CALC-02 | Phase 9 | Pending |
+| CALC-03 | Phase 9 | Pending |
+| CALC-04 | Phase 9 | Pending |
+| CALC-05 | Phase 9 | Pending |
+| CONF-01 | Phase 10 | Pending |
+| CONF-02 | Phase 10 | Pending |
+| CONF-03 | Phase 10 | Pending |
+| CONF-04 | Phase 10 | Pending |
+| VIS-03 | Phase 11 | Pending |
+| VIS-04 | Phase 11 | Pending |
+| VIS-05 | Phase 11 | Pending |
+| VIS-01 | Phase 12 | Pending |
+| VIS-02 | Phase 12 | Pending |
+| INTG-01 | Phase 12 | Pending |
 
 **Coverage:**
 - v3.0 requirements: 15 total
-- Mapped to phases: 0
-- Unmapped: 15 ⚠️
+- Mapped to phases: 15 ✅
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-08-12*
-*Last updated: 2026-08-12 after initial definition*
+*Last updated: 2026-08-12 after roadmap creation*
