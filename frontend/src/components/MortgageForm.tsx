@@ -104,7 +104,7 @@ export const MortgageForm: React.FC<MortgageFormProps> = ({ onResultChange }) =>
         isNaN(parsedPromoRate) || parsedPromoRate < 0 ||
         isNaN(parsedPromoMonths) || parsedPromoMonths < 0 ||
         isNaN(parsedFloatingRate) || parsedFloatingRate < 0 ||
-        parsedGrace > parsedPromoMonths
+        parsedGrace >= parsedTenure * 12
       ) {
         setMortgageResult(null);
         return;
