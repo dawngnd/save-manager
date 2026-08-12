@@ -46,12 +46,21 @@ export const PaymentBreakdownChart: React.FC<PaymentBreakdownChartProps> = ({ re
     let labels: string[];
     let principalData: number[];
     let interestData: number[];
+    let cumulativeInterest: number[];
+    let remainingBalanceData: number[];
     let cliffIndex: number | null = null;
 
     if (viewMode === 'yearly') {
       labels = result.yearlySummary.map(y => `Năm ${y.year}`);
       principalData = result.yearlySummary.map(y => y.principalPaid);
       interestData = result.yearlySummary.map(y => y.interestPaid);
+      remainingBalanceData = result.yearlySummary.map(y => y.remainingBalance);
+      // Cumulative interest by year
+      let cumInt = 0;
+      cumulativeInterest = result.yearlySummary.map(y => {
+        cumInt += y.interestPaid;
+        return cumInt;
+      });
       // Rate cliff position in yearly view
       if (result.rateCliffPaymentBefore !== result.rateCliffPaymentAfter && promoMonths > 0) {
         cliffIndex = Math.ceil(promoMonths / 12) - 1;
@@ -60,6 +69,13 @@ export const PaymentBreakdownChart: React.FC<PaymentBreakdownChartProps> = ({ re
       labels = result.monthlySchedule.map(m => `T${m.month}`);
       principalData = result.monthlySchedule.map(m => m.principalPaid);
       interestData = result.monthlySchedule.map(m => m.interestPaid);
+      remainingBalanceData = result.monthlySchedule.map(m => m.remainingBalance);
+      // Cumulative interest by month
+      let cumIntM = 0;
+      cumulativeInterest = result.monthlySchedule.map(m => {
+        cumIntM += m.interestPaid;
+        return cumIntM;
+      });
       // Rate cliff position in monthly view
       if (result.rateCliffPaymentBefore !== result.rateCliffPaymentAfter && promoMonths > 0) {
         cliffIndex = promoMonths - 1;
@@ -153,6 +169,14 @@ export const PaymentBreakdownChart: React.FC<PaymentBreakdownChartProps> = ({ re
               label: (context: any) => {
                 const value = context.raw as number;
                 return `${context.dataset.label}: ${value.toLocaleString('vi-VN')} ₫`;
+              },
+              afterBody: (contexts: any[]) => {
+                const idx = contexts[0]?.dataIndex;
+                if (idx === undefined) return '';
+                const lines: string[] = [''];
+                lines.push(`Tổng lãi đã trả: ${cumulativeInterest[idx].toLocaleString('vi-VN')} ₫`);
+                lines.push(`Gốc còn lại: ${remainingBalanceData[idx].toLocaleString('vi-VN')} ₫`);
+                return lines;
               },
             },
           },
