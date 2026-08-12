@@ -43,6 +43,7 @@ export interface LoanInputs {
   floatingRate: number;
   repaymentMethod: RepaymentMethod;
   gracePeriodMonths: number;
+  earlySettlementMonth: number; // tất toán trước hạn — default = tenureYears * 12
 }
 
 export interface PaymentScheduleItem {
