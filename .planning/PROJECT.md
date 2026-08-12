@@ -13,17 +13,16 @@ Quản lý chính xác trạng thái các khoản tiết kiệm, hỗ trợ tái
 - **Shipped Version:** v1.0 (2026-07-14)
 - **Status:** Hoàn tất 5 phase cốt lõi của MVP, tích hợp hệ thống Database Google Sheets, API GAS, Telegram Bot Webhook, daily triggers cảnh báo và frontend React SPA dạng single-file.
 
-## Current Milestone: v2.0 Polish & Analytics
+## Current Milestone: v3.0 Mortgage Loan Estimator
 
-**Goal:** Sửa các lỗi tích hợp giao diện từ v1.0 và bổ sung tính năng phân tích/lịch sử nâng cao.
+**Goal:** Xây dựng module ước tính khoản vay mua nhà hoàn toàn phía frontend, với tham số cấu hình động dựa trên cấu trúc thực tế của các ngân hàng Việt Nam.
 
 **Target features:**
-- AUTH-02: Xác thực HMAC-SHA256 cho Telegram initData
-- STAT-02: Phân tích tỷ trọng tiết kiệm theo kỳ hạn/ngân hàng
-- HIST-01: Phả hệ (lineage tree) khoản gửi đã tái tục
-- GAP-01: Tích hợp UserSelector dropdown vào App.tsx
-- GAP-02: Nhập tay bankcode mới trong DepositForm
-- GAP-03: Auto-link Chat ID qua API get_deposits
+- LOAN-01: Nghiên cứu cấu trúc khoản vay mua nhà các ngân hàng (Vietinbank, BIDV, Vietcombank, VPBank)
+- LOAN-02: Module ước tính lãi hàng tháng & lũy kế lãi theo khoản vay
+- LOAN-03: Biểu đồ trực quan phân bổ gốc/lãi theo tháng và lũy kế
+- LOAN-04: Tham số cấu hình động (thời hạn, lãi suất, % trả gốc, ...)
+- LOAN-05: Tab riêng trên giao diện đặt cạnh Analytics
 
 ## Requirements
 
@@ -42,15 +41,20 @@ Quản lý chính xác trạng thái các khoản tiết kiệm, hỗ trợ tái
 - ✓ **STAT-01**: Step-wise timeseries growth chart — v1.0
 - ✓ **DEP-01**: FAB deposit form with realtime interest calculation — v1.0
 - ✓ **DEP-02**: Matured deposit Rollover transaction UI & backend execution — v1.0
+- ✓ **AUTH-02**: Xác thực chữ ký `initData` của Telegram Web App bằng HMAC-SHA256 — v2.0
+- ✓ **STAT-02**: Phân tích tỷ trọng tiết kiệm theo kỳ hạn/ngân hàng — v2.0
+- ✓ **HIST-01**: Phả hệ (lineage tree) khoản gửi đã tái tục — v2.0
+- ✓ **GAP-01**: Tích hợp UserSelector dropdown vào App.tsx — v2.0
+- ✓ **GAP-02**: Nhập tay bankcode mới trong DepositForm — v2.0
+- ✓ **GAP-03**: Auto-link Chat ID qua API get_deposits — v2.0
 
-### Active (v2.0 Backlog)
+### Active (v3.0)
 
-- [ ] **AUTH-02**: Xác thực chữ ký `initData` của Telegram Web App bằng HMAC-SHA256 nâng cao.
-- [ ] **STAT-02**: Phân tích tỷ trọng tiết kiệm theo kỳ hạn hoặc ngân hàng.
-- [ ] **HIST-01**: Trang chi tiết xem lịch sử phả hệ các khoản gửi đã được rolled_over.
-- [ ] **GAP-01**: Tích hợp `UserSelector` dropdown vào màn hình bắt đầu của `App.tsx` (AUTH-01 fix).
-- [ ] **GAP-02**: Hỗ trợ nhập tay bankcode mới khi thêm khoản tiết kiệm trong `DepositForm` (DEP-01 fix).
-- [ ] **GAP-03**: Truyền tham số `username_bankcode` trong API `get_deposits` để tự động link Chat ID (BOT-01 fix).
+- [ ] **LOAN-01**: Nghiên cứu cấu trúc khoản vay mua nhà các ngân hàng Việt Nam
+- [ ] **LOAN-02**: Module ước tính lãi hàng tháng & lũy kế lãi
+- [ ] **LOAN-03**: Biểu đồ trực quan phân bổ gốc/lãi
+- [ ] **LOAN-04**: Tham số cấu hình động
+- [ ] **LOAN-05**: Tab riêng trên giao diện cạnh Analytics
 
 ### Out of Scope
 
@@ -102,4 +106,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-08-11 after v2.0 milestone start*
+*Last updated: 2026-08-12 after v3.0 milestone start*
