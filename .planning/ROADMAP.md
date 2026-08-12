@@ -33,7 +33,7 @@
 - [x] **Phase 9: Types & Calculation Engine** - TypeScript domain types và mortgage calculation engine hỗ trợ 2 phương thức trả nợ, lãi suất 2 giai đoạn, ân hạn gốc, integer arithmetic. (completed 2026-08-12)
 - [ ] **Phase 10: Form UI & Bank Presets** - Form nhập tham số khoản vay với progressive disclosure, bank preset selector auto-fill, và localStorage persist.
 - [ ] **Phase 11: Charts & Visualization** - Biểu đồ stacked bar phân bổ gốc/lãi, biểu đồ lũy kế area chart, và cảnh báo vách đá lãi suất.
-- [ ] **Phase 12: Summary, Schedule & Tab Integration** - Thẻ KPI tổng kết, bảng lịch trả nợ accordion, MortgageTab wrapper và tích hợp tab vào App.tsx.
+- [x] **Phase 12: Summary, Schedule & Tab Integration** - Thẻ KPI tổng kết, bảng lịch trả nợ accordion, MortgageTab wrapper và tích hợp tab vào App.tsx. (completed 2026-08-12)
 
 ---
 
@@ -177,4 +177,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 9. Types & Calculation Engine | v3.0 | 1/1 | Complete    | 2026-08-12 |
 | 10. Form UI & Bank Presets | v3.0 | 1/1 | Complete   | 2026-08-12 |
 | 11. Charts & Visualization | v3.0 | 1/1 | Complete   | 2026-08-12 |
-| 12. Summary, Schedule & Tab Integration | v3.0 | 0/? | Pending | — |
+| 12. Summary, Schedule & Tab Integration | v3.0 | 1/1 | Complete | 2026-08-12 |
