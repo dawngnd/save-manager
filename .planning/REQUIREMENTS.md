@@ -1,75 +1,94 @@
 # Requirements: Save Manager
 
-**Defined:** 2026-08-11
+**Defined:** 2026-08-12
 **Core Value:** Quản lý chính xác trạng thái các khoản tiết kiệm, hỗ trợ tái tục linh hoạt và hiển thị biểu đồ trực quan ước tính tăng trưởng tổng tài sản theo thời gian.
 
-## v2.0 Requirements
+## v3.0 Requirements
 
-Requirements cho milestone v2.0 Polish & Analytics. Mỗi mục map đến roadmap phase.
+Requirements for Mortgage Loan Estimator module. Each maps to roadmap phases.
 
-### Security & Auth
+### Calculation Engine
 
-- [ ] **AUTH-02**: Xác thực chữ ký HMAC-SHA256 trên initData Telegram Web App ở backend GAS
-- [ ] **AUTH-03**: Kiểm tra auth_date hết hạn (≤ 24h) để chống replay attack
-- [ ] **AUTH-04**: Hỗ trợ Hybrid Auth — fallback mock cho môi trường dev desktop
-- [ ] **AUTH-05**: Whitelist chat_id hợp lệ trong GAS Script Properties — reject nếu chat_id không thuộc whitelist
+- [ ] **CALC-01**: User có thể ước tính khoản vay theo phương thức Dư nợ giảm dần (Equal Principal) — tiền gốc trả đều, lãi tính trên dư nợ còn lại
+- [ ] **CALC-02**: User có thể ước tính khoản vay theo phương thức Trả đều hàng tháng (Annuity/PMT) — tổng trả cố định hàng tháng
+- [ ] **CALC-03**: User có thể cấu hình lãi suất 2 giai đoạn: ưu đãi cố định (6-36 tháng) → thả nổi cho phần còn lại
+- [ ] **CALC-04**: User thấy tổng lãi phải trả, tổng tiền trả, và tỷ lệ lãi/gốc sau khi nhập tham số
+- [ ] **CALC-05**: User có thể cấu hình ân hạn gốc (Grace Period) — giai đoạn chỉ trả lãi, chưa trả gốc
 
-### Analytics
+### Visualization
 
-- [ ] **STAT-02**: Biểu đồ Doughnut phân bổ tỷ trọng tài sản theo ngân hàng
-- [ ] **STAT-03**: Biểu đồ Doughnut phân bổ tỷ trọng tài sản theo kỳ hạn
-- [ ] **STAT-04**: Thẻ chỉ số lãi suất trung bình gia quyền (WAIR)
+- [ ] **VIS-01**: User thấy bảng lịch trả nợ chi tiết theo tháng với accordion gộp theo năm
+- [ ] **VIS-02**: User thấy thẻ tổng kết KPI hiển thị: tổng lãi, peak payment tháng đầu, payment tháng đầu thả nổi
+- [ ] **VIS-03**: User thấy biểu đồ stacked bar phân bổ gốc/lãi theo năm (default) với option xem theo tháng
+- [ ] **VIS-04**: User thấy biểu đồ lũy kế lãi vs gốc đã trả dạng area/line chart
+- [ ] **VIS-05**: User thấy cảnh báo "vách đá lãi suất" highlight chênh lệch payment khi chuyển từ ưu đãi sang thả nổi
 
-### Deposit History
+### Configuration
 
-- [ ] **HIST-01**: Duyệt phả hệ 2 chiều (parent_id ↔ child_id) từ dữ liệu deposits
-- [ ] **HIST-02**: Hiển thị timeline tree UI các thế hệ khoản gửi đã tái tục
-- [ ] **HIST-03**: Hiển thị tổng lãi tích lũy và hệ số tăng trưởng qua các kỳ tái tục
+- [ ] **CONF-01**: User nhập tham số động: tiền vay (VNĐ), thời hạn (năm), lãi suất ưu đãi (%/năm), thời gian ưu đãi (tháng), lãi suất thả nổi (%/năm), phương thức trả nợ
+- [ ] **CONF-02**: User chọn preset ngân hàng (Vietcombank, BIDV, Vietinbank, VPBank) để auto-fill tham số lãi suất phổ biến
+- [ ] **CONF-03**: Form hiển thị 3 field cơ bản (tiền vay, thời hạn, lãi suất), phần nâng cao ẩn trong expandable section
+- [ ] **CONF-04**: Tham số nhập được lưu vào localStorage và khôi phục khi mở lại app
+
+### Integration
+
+- [ ] **INTG-01**: Module Mortgage Estimator hiển thị trên tab riêng "Vay" đặt cạnh tab Analytics trong App.tsx
 
 ## Future Requirements
 
-Deferred — không nằm trong roadmap v2.0.
+Deferred to future release. Tracked but not in current roadmap.
 
-### UI Polish
+### Comparison
 
-- **GAP-01**: Tích hợp UserSelector dropdown vào màn hình bắt đầu của App.tsx (không cần nữa — auth whitelist thay thế)
-- **GAP-02**: Hỗ trợ nhập tay bankcode mới khi thêm khoản tiết kiệm trong DepositForm
+- **COMP-01**: So sánh 2 kịch bản side-by-side (VD: 15 năm vs 25 năm, hoặc giảm dần vs annuity)
 
-### Integration Fixes
+### Advanced Features
 
-- **GAP-03**: Tự động liên kết telegram_chat_id vào bảng Users (không cần nữa — whitelist chat_id thay thế)
+- **ADV-01**: Trả nợ trước hạn (Prepayment Simulation) — thêm khoản trả gốc sớm tại tháng X
+- **ADV-02**: Tích hợp tiết kiệm ↔ vay — rút tiết kiệm trả trước, tính tiết kiệm bao nhiêu lãi
+- **ADV-03**: Export PDF lịch trả nợ
+- **ADV-04**: Multi-stage floating rate — nhiều mức lãi suất thả nổi cho các khoảng thời gian khác nhau
 
 ## Out of Scope
 
+Explicitly excluded. Documented to prevent scope creep.
+
 | Feature | Reason |
 |---------|--------|
-| Session token lưu trên Sheets | Thêm complexity không cần thiết — HMAC stateless đủ cho app cá nhân |
-| D3.js / React Flow cho lineage tree | Phình bundle single-file (>250KB), conflict với TWA touch gestures |
-| OAuth / đăng nhập mật khẩu | App cá nhân, Telegram auth + whitelist là đủ |
-| Đa tiền tệ | Chỉ sử dụng VND cho v2.0 |
-| Phân quyền theo bankcode | Load all deposits — app cá nhân không cần phân quyền |
-| UserSelector dropdown | Whitelist chat_id thay thế — sau auth load toàn bộ dữ liệu |
+| Tự động crawl lãi suất ngân hàng | DOM đổi liên tục, GAS timeout, lãi suất tùy từng KH |
+| Backend GAS cho tính toán vay | Tăng latency không cần thiết, module chỉ cần estimation |
+| Tích hợp CIC (Trung tâm Tín dụng) | API không public, phức tạp pháp lý |
+| Hỗ trợ lãi kép (Compound Interest) | VN dùng lãi đơn trên dư nợ giảm dần, lãi kép sai thực tế |
+| D3.js hoặc charting library nặng | Phình bundle 500KB+, Chart.js đủ dùng |
+| big.js/decimal.js | VND không có phần lẻ, integer arithmetic đủ chính xác |
 
 ## Traceability
 
+Which phases cover which requirements. Updated during roadmap creation.
+
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-02 | Phase 6 | Pending |
-| AUTH-03 | Phase 6 | Pending |
-| AUTH-04 | Phase 6 | Pending |
-| AUTH-05 | Phase 6 | Pending |
-| STAT-02 | Phase 7 | Pending |
-| STAT-03 | Phase 7 | Pending |
-| STAT-04 | Phase 7 | Pending |
-| HIST-01 | Phase 8 | Pending |
-| HIST-02 | Phase 8 | Pending |
-| HIST-03 | Phase 8 | Pending |
+| CALC-01 | — | Pending |
+| CALC-02 | — | Pending |
+| CALC-03 | — | Pending |
+| CALC-04 | — | Pending |
+| CALC-05 | — | Pending |
+| VIS-01 | — | Pending |
+| VIS-02 | — | Pending |
+| VIS-03 | — | Pending |
+| VIS-04 | — | Pending |
+| VIS-05 | — | Pending |
+| CONF-01 | — | Pending |
+| CONF-02 | — | Pending |
+| CONF-03 | — | Pending |
+| CONF-04 | — | Pending |
+| INTG-01 | — | Pending |
 
 **Coverage:**
-- v2.0 requirements: 10 total
-- Mapped to phases: 10
-- Unmapped: 0 ✓
+- v3.0 requirements: 15 total
+- Mapped to phases: 0
+- Unmapped: 15 ⚠️
 
 ---
-*Requirements defined: 2026-08-11*
-*Last updated: 2026-08-11 after auth flow clarification (whitelist chat_id)*
+*Requirements defined: 2026-08-12*
+*Last updated: 2026-08-12 after initial definition*
