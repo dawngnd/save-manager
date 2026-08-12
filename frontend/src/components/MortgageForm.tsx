@@ -4,6 +4,7 @@ import { calculateMortgage } from '../utils/mortgage';
 import { BankPresetSelector } from './BankPresetSelector';
 import { MortgageKpiCards } from './MortgageKpiCards';
 import { MortgageCharts } from './MortgageCharts';
+import { AmortizationTable } from './AmortizationTable';
 import { BankPreset } from '../data/bankPresets';
 
 const STORAGE_KEY = 'mortgage_form_inputs';
@@ -18,7 +19,11 @@ const DEFAULT_INPUTS = {
   gracePeriodMonths: '0',  // 0 tháng
 };
 
-export const MortgageForm: React.FC = () => {
+interface MortgageFormProps {
+  onResultChange?: (result: MortgageResult | null) => void;
+}
+
+export const MortgageForm: React.FC<MortgageFormProps> = ({ onResultChange }) => {
   // Field States (D-04: 4 basic + 3 advanced)
   const [loanAmount, setLoanAmount] = useState<string>(DEFAULT_INPUTS.loanAmount);
   const [tenureYears, setTenureYears] = useState<string>(DEFAULT_INPUTS.tenureYears);
@@ -126,6 +131,11 @@ export const MortgageForm: React.FC = () => {
 
     return () => clearTimeout(timer);
   }, [loanAmount, tenureYears, promoRate, promoMonths, floatingRate, repaymentMethod, gracePeriodMonths]);
+
+  // Notify parent of result changes (for MortgageTab or other wrappers)
+  useEffect(() => {
+    onResultChange?.(mortgageResult);
+  }, [mortgageResult, onResultChange]);
 
   return (
     <div className="bg-[#0e1621] border border-[#2b394a] rounded-2xl p-5 shadow-2xl space-y-5 text-sm text-[#f5f5f5]">
@@ -288,6 +298,9 @@ export const MortgageForm: React.FC = () => {
         result={mortgageResult}
         promoMonths={parseInt(promoMonths) || 12}
       />
+
+      {/* Amortization Schedule Table (Phase 12) */}
+      <AmortizationTable result={mortgageResult} />
     </div>
   );
 };
