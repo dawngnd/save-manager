@@ -3,8 +3,8 @@ import { LoanInputs, MortgageResult, PaymentScheduleItem, YearlySummaryItem } fr
 export function calculateMortgage(inputs: LoanInputs): MortgageResult {
   const totalMonths = inputs.tenureYears * 12;
   
-  if (inputs.gracePeriodMonths > inputs.promoMonths) {
-    throw new Error("Grace period cannot exceed promo period");
+  if (inputs.gracePeriodMonths >= totalMonths) {
+    throw new Error("Grace period cannot exceed loan tenure");
   }
   
   const monthlySchedule: PaymentScheduleItem[] = [];
