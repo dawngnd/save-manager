@@ -11,6 +11,7 @@ import { TermShareChart } from './TermShareChart';
 import { WairKpiCard } from './WairKpiCard';
 import { GoldForm } from './GoldForm';
 import { GoldList } from './GoldList';
+import { MortgageTab } from './MortgageTab';
 import { retrieveLaunchParams } from '@telegram-apps/sdk';
 import { Deposit, GoldPrice } from '../types';
 import { useDepositsCache } from '../hooks/useDepositsCache';
@@ -35,7 +36,7 @@ declare global {
   }
 }
 
-type ActiveTab = 'deposits' | 'gold' | 'analytics';
+type ActiveTab = 'deposits' | 'gold' | 'analytics' | 'mortgage';
 
 export const App: React.FC = () => {
   const { deposits, loading, error, refresh, fetchDeposits } = useDepositsCache();
@@ -173,11 +174,11 @@ export const App: React.FC = () => {
         {/* Header */}
         <div className="flex justify-between items-center bg-[#0e1621] border border-[#2b394a] rounded-2xl p-4 shadow-lg">
           <div className="flex items-center space-x-3">
-            <span className="text-3xl">{activeTab === 'gold' ? '🥇' : '💰'}</span>
+            <span className="text-3xl">{activeTab === 'gold' ? '🥇' : activeTab === 'mortgage' ? '🏠' : '💰'}</span>
             <div>
               <div className="text-xs text-[#708499] uppercase tracking-wider font-semibold">Save Manager</div>
               <div className="text-sm font-bold text-[#64b5f6]">
-                {activeTab === 'gold' ? 'Quản lý vàng' : 'Quản lý tiết kiệm'}
+                {activeTab === 'gold' ? 'Quản lý vàng' : activeTab === 'mortgage' ? 'Ước tính vay' : 'Quản lý tiết kiệm'}
               </div>
             </div>
           </div>
@@ -267,6 +268,16 @@ export const App: React.FC = () => {
             }`}
           >
             📊 Analytics
+          </button>
+          <button
+            onClick={() => setActiveTab('mortgage')}
+            className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition cursor-pointer ${
+              activeTab === 'mortgage'
+                ? 'bg-[#ef5350] text-white shadow'
+                : 'text-[#708499] hover:text-[#f5f5f5]'
+            }`}
+          >
+            🏠 Vay
           </button>
         </div>
 
@@ -415,6 +426,9 @@ export const App: React.FC = () => {
             )}
           </div>
         )}
+
+        {/* ══════════ TAB: VAY ══════════ */}
+        {activeTab === 'mortgage' && <MortgageTab />}
 
         {/* FAB — hiển thị theo tab */}
         {activeTab === 'deposits' && (
