@@ -3,6 +3,7 @@ import { LoanInputs, MortgageResult, RepaymentMethod } from '../types';
 import { calculateMortgage } from '../utils/mortgage';
 import { BankPresetSelector } from './BankPresetSelector';
 import { MortgageKpiCards } from './MortgageKpiCards';
+import { MortgageCharts } from './MortgageCharts';
 import { BankPreset } from '../data/bankPresets';
 
 const STORAGE_KEY = 'mortgage_form_inputs';
@@ -280,6 +281,12 @@ export const MortgageForm: React.FC = () => {
       <MortgageKpiCards
         result={mortgageResult}
         loanAmount={parseFloat(loanAmount) || 0}
+      />
+
+      {/* Charts Visualization Section (Phase 11) */}
+      <MortgageCharts
+        result={mortgageResult}
+        promoMonths={parseInt(promoMonths) || 12}
       />
     </div>
   );
