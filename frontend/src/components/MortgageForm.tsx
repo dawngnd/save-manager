@@ -17,6 +17,7 @@ const DEFAULT_INPUTS = {
   floatingRate: '12.5',    // 12.5%/năm
   repaymentMethod: 'reducing_balance' as RepaymentMethod,
   gracePeriodMonths: '0',  // 0 tháng
+  earlySettlementMonth: '', // rỗng = tất toán đúng hạn
 };
 
 interface MortgageFormProps {
@@ -32,6 +33,7 @@ export const MortgageForm: React.FC<MortgageFormProps> = ({ onResultChange }) =>
   const [floatingRate, setFloatingRate] = useState<string>(DEFAULT_INPUTS.floatingRate);
   const [repaymentMethod, setRepaymentMethod] = useState<RepaymentMethod>(DEFAULT_INPUTS.repaymentMethod);
   const [gracePeriodMonths, setGracePeriodMonths] = useState<string>(DEFAULT_INPUTS.gracePeriodMonths);
+  const [earlySettlementMonth, setEarlySettlementMonth] = useState<string>(DEFAULT_INPUTS.earlySettlementMonth);
 
   // Selector & UI States
   const [selectedPresetId, setSelectedPresetId] = useState<string>('vietcombank');
@@ -51,6 +53,7 @@ export const MortgageForm: React.FC<MortgageFormProps> = ({ onResultChange }) =>
         if (parsed.floatingRate !== undefined) setFloatingRate(String(parsed.floatingRate));
         if (parsed.repaymentMethod !== undefined) setRepaymentMethod(parsed.repaymentMethod);
         if (parsed.gracePeriodMonths !== undefined) setGracePeriodMonths(String(parsed.gracePeriodMonths));
+        if (parsed.earlySettlementMonth !== undefined) setEarlySettlementMonth(String(parsed.earlySettlementMonth || ''));
         if (parsed.selectedPresetId !== undefined) setSelectedPresetId(parsed.selectedPresetId);
       }
     } catch (e) {
@@ -68,6 +71,7 @@ export const MortgageForm: React.FC<MortgageFormProps> = ({ onResultChange }) =>
       floatingRate: parseFloat(floatingRate) || 0,
       repaymentMethod,
       gracePeriodMonths: parseFloat(gracePeriodMonths) || 0,
+      earlySettlementMonth: earlySettlementMonth,
       selectedPresetId,
     };
     try {
@@ -75,7 +79,7 @@ export const MortgageForm: React.FC<MortgageFormProps> = ({ onResultChange }) =>
     } catch (e) {
       console.warn('Failed to save mortgage inputs to localStorage', e);
     }
-  }, [loanAmount, tenureYears, promoRate, promoMonths, floatingRate, repaymentMethod, gracePeriodMonths, selectedPresetId]);
+  }, [loanAmount, tenureYears, promoRate, promoMonths, floatingRate, repaymentMethod, gracePeriodMonths, earlySettlementMonth, selectedPresetId]);
 
   // Handle Preset Select (D-01: Chỉ fill 3 trường lãi suất)
   const handleSelectPreset = (preset: BankPreset) => {
@@ -96,6 +100,8 @@ export const MortgageForm: React.FC<MortgageFormProps> = ({ onResultChange }) =>
       const parsedPromoMonths = parseFloat(promoMonths);
       const parsedFloatingRate = parseFloat(floatingRate);
       const parsedGrace = parseFloat(gracePeriodMonths) || 0;
+      const totalMonths = parsedTenure * 12;
+      const parsedSettlement = earlySettlementMonth ? parseInt(earlySettlementMonth) : totalMonths;
 
       // Validation: skip calculation if inputs are invalid
       if (
@@ -104,7 +110,8 @@ export const MortgageForm: React.FC<MortgageFormProps> = ({ onResultChange }) =>
         isNaN(parsedPromoRate) || parsedPromoRate < 0 ||
         isNaN(parsedPromoMonths) || parsedPromoMonths < 0 ||
         isNaN(parsedFloatingRate) || parsedFloatingRate < 0 ||
-        parsedGrace >= parsedTenure * 12
+        parsedGrace >= parsedTenure * 12 ||
+        parsedSettlement <= 0 || parsedSettlement > totalMonths
       ) {
         setMortgageResult(null);
         return;
@@ -118,6 +125,7 @@ export const MortgageForm: React.FC<MortgageFormProps> = ({ onResultChange }) =>
         floatingRate: parsedFloatingRate,
         repaymentMethod,
         gracePeriodMonths: parsedGrace,
+        earlySettlementMonth: parsedSettlement,
       };
 
       try {
@@ -130,7 +138,7 @@ export const MortgageForm: React.FC<MortgageFormProps> = ({ onResultChange }) =>
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [loanAmount, tenureYears, promoRate, promoMonths, floatingRate, repaymentMethod, gracePeriodMonths]);
+  }, [loanAmount, tenureYears, promoRate, promoMonths, floatingRate, repaymentMethod, gracePeriodMonths, earlySettlementMonth]);
 
   // Notify parent of result changes (for MortgageTab or other wrappers)
   useEffect(() => {
@@ -282,6 +290,21 @@ export const MortgageForm: React.FC<MortgageFormProps> = ({ onResultChange }) =>
               value={gracePeriodMonths}
               onChange={(e) => setGracePeriodMonths(e.target.value)}
               className="w-full bg-[#17212b] border border-[#2c3847] focus:border-[#5288c1] rounded-xl px-3 py-2.5 text-[#f5f5f5] text-sm focus:outline-none"
+            />
+          </div>
+
+          {/* Tất toán trước hạn (tháng) */}
+          <div className="space-y-1">
+            <label htmlFor="early-settlement" className="text-xs text-[#708499] font-semibold uppercase tracking-wider block">
+              Tất toán sau (tháng)
+            </label>
+            <input
+              id="early-settlement"
+              type="number"
+              value={earlySettlementMonth}
+              onChange={(e) => setEarlySettlementMonth(e.target.value)}
+              placeholder={`${parseInt(tenureYears) * 12 || 240}`}
+              className="w-full bg-[#17212b] border border-[#2c3847] focus:border-[#5288c1] rounded-xl px-3 py-2.5 text-[#f5f5f5] text-sm focus:outline-none placeholder-[#4a5568]"
             />
           </div>
         </div>

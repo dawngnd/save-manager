@@ -2,8 +2,9 @@ import { LoanInputs, MortgageResult, PaymentScheduleItem, YearlySummaryItem } fr
 
 export function calculateMortgage(inputs: LoanInputs): MortgageResult {
   const totalMonths = inputs.tenureYears * 12;
+  const effectiveMonths = Math.min(inputs.earlySettlementMonth, totalMonths);
   
-  if (inputs.gracePeriodMonths >= totalMonths) {
+  if (inputs.gracePeriodMonths >= effectiveMonths) {
     throw new Error("Grace period cannot exceed loan tenure");
   }
   
@@ -15,7 +16,7 @@ export function calculateMortgage(inputs: LoanInputs): MortgageResult {
   let rateCliffPaymentBefore = 0;
   let rateCliffPaymentAfter = 0;
   
-  for (let month = 1; month <= totalMonths; month++) {
+  for (let month = 1; month <= effectiveMonths; month++) {
     const isPromo = month <= inputs.promoMonths;
     const currentRate = isPromo ? inputs.promoRate : inputs.floatingRate;
     
@@ -24,16 +25,16 @@ export function calculateMortgage(inputs: LoanInputs): MortgageResult {
     
     if (month > inputs.gracePeriodMonths) {
       if (inputs.repaymentMethod === 'reducing_balance') {
-        if (month === totalMonths) {
+        if (month === effectiveMonths) {
           principalPaid = remainingBalance;
         } else {
-          principalPaid = Math.round(inputs.loanAmount / (totalMonths - inputs.gracePeriodMonths));
+          principalPaid = Math.round(inputs.loanAmount / (effectiveMonths - inputs.gracePeriodMonths));
         }
       } else { // annuity
-        if (month === totalMonths) {
+        if (month === effectiveMonths) {
           principalPaid = remainingBalance;
         } else {
-          const remainingMonths = totalMonths - month + 1;
+          const remainingMonths = effectiveMonths - month + 1;
           if (currentRate === 0) {
             principalPaid = Math.round(remainingBalance / remainingMonths);
           } else {
@@ -45,7 +46,7 @@ export function calculateMortgage(inputs: LoanInputs): MortgageResult {
       }
     }
     
-    if (principalPaid > remainingBalance || month === totalMonths) {
+    if (principalPaid > remainingBalance || month === effectiveMonths) {
        principalPaid = remainingBalance;
     }
     
