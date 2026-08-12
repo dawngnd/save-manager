@@ -32,3 +32,45 @@ export interface GoldPrice {
   price_per_chi: number; // giá hiện tại 1 chỉ (100g)
   updated_at: string;
 }
+
+export type RepaymentMethod = 'reducing_balance' | 'annuity';
+
+export interface LoanInputs {
+  loanAmount: number;
+  tenureYears: number;
+  promoRate: number;
+  promoMonths: number;
+  floatingRate: number;
+  repaymentMethod: RepaymentMethod;
+  gracePeriodMonths: number;
+}
+
+export interface PaymentScheduleItem {
+  month: number;
+  year: number;
+  principalPaid: number;
+  interestPaid: number;
+  totalPayment: number;
+  remainingBalance: number;
+  interestRate: number;
+}
+
+export interface YearlySummaryItem {
+  year: number;
+  principalPaid: number;
+  interestPaid: number;
+  totalPayment: number;
+  remainingBalance: number;
+}
+
+export interface MortgageResult {
+  monthlySchedule: PaymentScheduleItem[];
+  yearlySummary: YearlySummaryItem[];
+  totalInterest: number;
+  totalPayment: number;
+  interestToLoanRatio: number;
+  firstMonthPayment: number;
+  peakPayment: number;
+  rateCliffPaymentBefore: number;
+  rateCliffPaymentAfter: number;
+}

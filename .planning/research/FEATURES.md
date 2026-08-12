@@ -1,215 +1,175 @@
-# Feature Research
+# Mortgage Loan Feature Research (v3.0)
 
-**Domain:** Personal Finance / Savings Management (Google Apps Script + Google Sheets + Telegram Web App)  
-**Researched:** 2026-08-11  
-**Confidence:** HIGH  
-
----
-
-## Overview
-
-Tài liệu này nghiên cứu chuyên sâu về các tính năng mới trong cột mốc **v2.0 Polish & Analytics** cho ứng dụng **Save Manager**:
-1. **AUTH-02 & GAP-03**: Xác thực HMAC-SHA256 cho Telegram `initData` & Tự động liên kết Telegram Chat ID (`telegram_chat_id`).
-2. **HIST-01**: Trực quan hóa cây phả hệ tái tục khoản gửi (Deposit Lineage Tree) và tổng hợp lãi kép tích lũy.
-3. **STAT-02**: Phân tích tỷ trọng tiết kiệm theo Ngân hàng / Kỳ hạn & Lãi suất trung bình gia quyền (Weighted Average Interest Rate - WAIR).
-4. **GAP-01 & GAP-02**: Tích hợp `UserSelector` màn hình khởi động và hỗ trợ nhập linh hoạt `bankcode` mới.
+**Domain:** Personal Finance / Mortgage Loan Estimation — Vietnamese Banking Context
+**Researched:** 2026-08-12
+**Confidence:** HIGH
+**Banks Analyzed:** Vietinbank, BIDV, Vietcombank, VPBank
 
 ---
 
-## Feature Landscape
+## Loan Structure Research
 
-### Table Stakes (Người dùng mặc định kỳ vọng)
+### Cấu trúc lãi suất 2 giai đoạn (Two-Stage Interest Rate)
 
-Những tính năng nền tảng cho cột mốc v2.0. Nếu thiếu, trải nghiệm người dùng sẽ gián đoạn hoặc bảo mật không đảm bảo.
+Tất cả ngân hàng lớn tại Việt Nam đều áp dụng mô hình **lãi suất cố định ưu đãi → lãi suất thả nổi** cho các khoản vay mua nhà:
 
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| **Xác thực chữ ký HMAC-SHA256 cho `initData`** (`AUTH-02`) | Ngăn chặn giả mạo request API từ bên ngoài Telegram Mini App. Bảo vệ dữ liệu cá nhân. | LOW | Dùng `Utilities.computeHmacSha256Signature` trong GAS `AuthService`. Kiểm tra thời gian hết hạn `auth_date` (24h). |
-| **Tự động liên kết Chat ID khi gửi API** (`GAP-03`) | Người dùng mở Web App từ Telegram Bot thì tự động lưu `telegram_chat_id` vào sheet `Users` mà không cần nhập tay. | LOW | Đọc Telegram `user.id` từ `initData` đã được HMAC xác thực trong API `get_deposits` / `add`. |
-| **Phân tích tỷ trọng theo Ngân hàng & Kỳ hạn** (`STAT-02`) | Người dùng cần biết tài sản đang tập trung ở ngân hàng nào và kỳ hạn bao lâu để quản lý rủi ro thanh khoản. | MEDIUM | Chart.js Doughnut chart phân nhóm active deposits theo ngân hàng và theo các nhóm kỳ hạn (<3m, 3-6m, 6-12m, >12m). |
-| **Tra cứu phả hệ khoản gửi đã tái tục** (`HIST-01`) | Khi tái tục nhiều lần, người dùng cần xem khoản tiền hiện tại xuất thân từ khoản gốc nào. | MEDIUM | Duyệt cây qua quan hệ `parent_id` và `child_id`. Hiển thị chuỗi lịch sử các thế hệ khoản gửi. |
-| **Nhập thủ công mã ngân hàng mới** (`GAP-02`) | Người dùng gửi ở ngân hàng mới chưa có trong danh sách dropdown của UI. | LOW | Toggle chuyển đổi giữa Select bankcode có sẵn và Input nhập tay mã ngân hàng mới trong `DepositForm.tsx`. |
-| **UserSelector màn hình khởi động** (`GAP-01`) | Giúp chuyển đổi user dễ dàng khi ở chế độ Mock Desktop Dev hoặc quản lý nhiều tài khoản. | LOW | Tích hợp `UserSelector` vào header/startup view của `App.tsx`. |
+| Giai đoạn | Mô tả | Lãi suất phổ biến (2026) |
+|-----------|-------|-----------------------------|
+| **Ưu đãi (Fixed)** | Cố định trong 6–36 tháng đầu, tùy gói sản phẩm | 6%–11%/năm |
+| **Thả nổi (Floating)** | Sau ưu đãi, điều chỉnh định kỳ 3/6/12 tháng | 12%–15%/năm |
+
+### Công thức lãi suất thả nổi
+
+```
+Lãi suất thả nổi = Lãi suất tham chiếu + Biên độ cố định
+```
+
+- **Lãi suất tham chiếu**: Thường là lãi suất huy động kỳ hạn 12/13/24 tháng của ngân hàng đó (biến động theo thị trường).
+- **Biên độ**: Cố định suốt thời gian vay, thường 3.0%–4.0%/năm.
+- **Tần suất điều chỉnh**: 3 tháng, 6 tháng, hoặc 12 tháng/lần (theo hợp đồng).
+
+### So sánh theo ngân hàng
+
+| Ngân hàng | Thời gian ưu đãi | Lãi suất ưu đãi | Biên độ thả nổi | Thời hạn tối đa | LTV tối đa | Điểm nổi bật |
+|-----------|-------------------|------------------|-----------------|------------------|------------|--------------|
+| **Vietcombank** | 6–24 tháng | 9.6%–13.9% | Thấp, ổn định | 30–35 năm | 70%–100% | Minh bạch, biên độ thấp nhất nhóm Big 4 |
+| **BIDV** | 6–18 tháng | 9.7%–13.5% | ~3.5% | 30–40 năm | 70%–100% | Kỳ hạn dài nhất, ưu đãi dự án liên kết |
+| **Vietinbank** | Lên đến 36 tháng | ~10% | ~3.5% | 30–35 năm | 70%–100% | Ưu đãi dài nhất, đa mục đích |
+| **VPBank** | Linh hoạt | Cạnh tranh | Cao hơn Big 3 | 25 năm | Lên đến 100% | Duyệt nhanh số hóa, LTV cao |
 
 ---
 
-### Differentiators (Tính năng tạo sự khác biệt)
+## Repayment Methods
 
-Các tính năng nâng tầm trải nghiệm ứng dụng so với các bot quản lý tài chính thông thường.
+### Phương thức 1: Dư nợ giảm dần (Equal Principal / Diminishing Balance)
 
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| **Interactive Deposit Lineage Tree & Compound Yield Tracker** | Hiển thị sơ đồ phả hệ trực quan (Tree/Timeline view) của dòng tiền qua các chu kỳ tái tục, tính tổng số tiền lãi đã sinh ra từ khoản gốc ban đầu qua nhiều năm. | MEDIUM | Render giao diện timeline node dạng dọc bằng CSS/SVG nhẹ (tránh thư viện đồ thị nặng). Tính tổng lãi dồn tích qua các thế hệ `rolled_over`. |
-| **Chỉ số Sức khỏe Tài sản (Weighted Avg Interest Rate - WAIR)** | Cung cấp chỉ số hiệu quả đầu tư tổng thể: Lãi suất trung bình gia quyền theo quy mô vốn $\sum (Amount_i \times Rate_i) / \sum Amount_i$. | LOW | Tính toán hiển thị dạng KPI Card nổi bật trên đầu dashboard phân tích. |
-| **Chế độ Auth Kép (Hybrid Auth with Desktop Fallback)** | Tự động sử dụng HMAC Telegram khi chạy trong WebApp, đồng thời hỗ trợ Mock Auth khi phát triển/test trên trình duyệt Desktop mà không làm hỏng code production. | MEDIUM | Graceful degradation trong `AuthService.js` và `telegram.ts` giúp việc debug cực kỳ thuận tiện. |
+Phương thức phổ biến nhất tại các ngân hàng Việt Nam. Tiền gốc trả đều hàng tháng, lãi tính trên dư nợ còn lại.
+
+**Công thức:**
+```
+Gốc mỗi tháng = Tổng tiền vay / Tổng số tháng vay
+Lãi tháng i    = Dư nợ còn lại(i) × (Lãi suất năm / 12)
+Tổng trả tháng = Gốc mỗi tháng + Lãi tháng tương ứng
+```
+
+**Đặc điểm:**
+- Tổng tiền trả **giảm dần** theo thời gian
+- Áp lực tài chính **cao ở đầu kỳ**, giảm dần về cuối
+- Tổng lãi phải trả **thấp hơn** phương thức annuity
+- Phù hợp người có thu nhập ổn định và dồi dào
+
+### Phương thức 2: Trả đều hàng tháng (Annuity / Equal Installment)
+
+Tổng tiền trả mỗi tháng (gốc + lãi) cố định trong suốt kỳ hạn.
+
+**Công thức:**
+```
+A = P × r(1+r)^n / ((1+r)^n - 1)
+
+Trong đó:
+  A = Số tiền trả hàng tháng (cố định)
+  P = Tổng tiền vay gốc
+  r = Lãi suất tháng (Lãi suất năm / 12)
+  n = Tổng số tháng vay
+```
+
+**Đặc điểm:**
+- Số tiền trả **cố định** → dễ lập ngân sách
+- Tỷ trọng gốc/lãi thay đổi: đầu kỳ ~70-80% là lãi
+- Tổng lãi phải trả **cao hơn** phương thức giảm dần
+- Phù hợp người muốn ổn định dòng tiền
+
+### Bảng so sánh 2 phương thức
+
+| Tiêu chí | Dư nợ giảm dần | Trả đều (Annuity) |
+|----------|----------------|---------------------|
+| Tổng trả hàng tháng | Giảm dần | Cố định |
+| Cách tính lãi | Trên dư nợ còn lại | Trên dư nợ còn lại |
+| Áp lực đầu kỳ | Cao | Vừa phải |
+| Tổng lãi toàn kỳ | Thấp hơn | Cao hơn |
+| Mức phổ biến tại VN | ★★★★★ | ★★★☆☆ |
 
 ---
 
-### Anti-Features (Các tính năng nên tránh)
+## Key Parameters
 
-Các tính năng dễ gây phình scope, làm chậm hệ thống hoặc không phù hợp với kiến trúc GAS + Single-file SPA.
+### Tham số cấu hình khoản vay
 
-| Feature | Why Requested | Why Problematic | Alternative |
-|---------|---------------|-----------------|-------------|
-| **Sử dụng thư viện Đồ thị nặng (D3.js / Vis.js / Cytoscape)** | Để vẽ sơ đồ cây phả hệ linh hoạt có thể kéo thả node. | Phình kích thước bundle single-file HTML thêm 500KB - 1MB, gây lag khi load trên Telegram Webview di động. | Tự thiết kế Component Timeline Tree phẳng bằng Tailwind/CSS flex, tối ưu hoàn toàn cho mobile screens. |
-| **Lưu Session Nonce/Token vào Google Sheets** | Lưu token phiên làm việc để invalidate session. | Mỗi lần đọc/ghi token vào Google Sheets làm tăng thời gian phản hồi API thêm 1-2 giây và dễ chạm quota GAS. | Xác thực Stateless dựa trên HMAC chữ ký `initData` của Telegram và check `auth_date` trong vòng 24 giờ. |
-| **Tự động quét tỷ giá/lãi suất ngân hàng từ Internet** | Cập nhật tự động bảng lãi suất các ngân hàng Việt Nam. | Các trang web ngân hàng đổi DOM thường xuyên, gọi fetch bên ngoài dễ bị timeout (giới hạn 6 phút của GAS) hoặc block IP. | Người dùng tự nhập `interest_rate` thực tế khi tạo hoặc tái tục khoản gửi (nhanh chóng và chính xác 100%). |
+| Tham số | Giá trị phổ biến | Ghi chú |
+|---------|-------------------|---------|
+| **Tổng tiền vay (P)** | Tùy nhập | Đơn vị triệu VNĐ |
+| **Giá trị BĐS** | Tùy nhập | Dùng tính LTV |
+| **LTV (Loan-to-Value)** | 70%–100% | Tùy ngân hàng và dự án |
+| **Thời hạn vay** | 5–35 năm | VPBank max 25y, Big 3 max 30–35y |
+| **Lãi suất ưu đãi** | 6%–11%/năm | Cố định giai đoạn 1 |
+| **Thời gian ưu đãi** | 6/12/18/24/36 tháng | Tùy gói sản phẩm |
+| **Lãi suất thả nổi** | 12%–15%/năm | Giai đoạn 2, biến động |
+| **Biên độ thả nổi** | 3.0%–4.0%/năm | Cố định suốt hợp đồng |
+| **Phí trả trước hạn** | 1%–3% | Áp dụng 3–5 năm đầu, giảm dần |
+| **Ân hạn gốc** | 0–24 tháng | Chỉ trả lãi, chưa trả gốc |
+| **Phương thức trả nợ** | Giảm dần / Annuity | Người dùng chọn |
+
+### Interest Calculation Mechanics
+
+**Nguyên tắc tính lãi vay mua nhà tại VN:**
+
+1. **Lãi đơn trên dư nợ giảm dần** — KHÔNG phải lãi kép. Tiền lãi tính trên dư nợ gốc thực tế còn lại, không cộng dồn lãi vào gốc.
+2. **Lãi tháng = Dư nợ × (Lãi suất năm / 12)** — Chia đều 12 tháng, không tính theo ngày thực tế.
+3. **Khi lãi suất thay đổi**: Lãi suất mới áp dụng cho dư nợ còn lại tại thời điểm điều chỉnh, lịch trả nợ được tính lại.
+
+---
+
+## Feature Categories
+
+### 🟢 Table Stakes (Bắt buộc phải có)
+
+| Feature | Mô tả | Complexity | Dependencies |
+|---------|--------|------------|--------------|
+| **Nhập tham số khoản vay** | Form nhập: tiền vay, thời hạn, lãi suất, phương thức trả | LOW | Không |
+| **Hỗ trợ 2 phương thức trả nợ** | Chuyển đổi giữa Giảm dần vs Annuity | MEDIUM | Cần 2 engine tính toán riêng |
+| **Bảng lịch trả nợ chi tiết** | Hiển thị tháng-by-tháng: gốc, lãi, tổng trả, dư nợ còn lại | MEDIUM | Phụ thuộc engine tính toán |
+| **Lãi suất 2 giai đoạn** | Nhập lãi suất ưu đãi + thời gian + lãi suất thả nổi | MEDIUM | Tính lại amortization khi rate change |
+| **Tổng kết khoản vay** | Hiển thị: tổng lãi, tổng tiền trả, lãi/gốc ratio | LOW | Aggregation từ bảng trả nợ |
+| **Tab riêng trên giao diện** | Tab "Vay" bên cạnh deposits/gold/analytics | LOW | Mở rộng `ActiveTab` type |
+
+### 🔵 Differentiators (Tạo sự khác biệt)
+
+| Feature | Giá trị | Complexity | Dependencies |
+|---------|---------|------------|--------------|
+| **Biểu đồ phân bổ Gốc/Lãi** (Stacked Bar) | Trực quan hóa cấu trúc thanh toán | MEDIUM | Chart.js (đã có) |
+| **Biểu đồ lũy kế lãi vs gốc** (Area/Line) | Thấy tổng lãi tích lũy, nhận diện "điểm hòa vốn" | MEDIUM | Chart.js |
+| **So sánh 2 kịch bản side-by-side** | So sánh 15 năm vs 25 năm, hoặc giảm dần vs annuity | HIGH | State 2 bộ tham số song song |
+| **Hỗ trợ ân hạn gốc (Grace Period)** | Giai đoạn đầu chỉ trả lãi | MEDIUM | Thêm giai đoạn thứ 3 vào engine |
+| **Dự báo "vách đá lãi suất"** | Highlight chuyển từ ưu đãi sang thả nổi | LOW | So sánh tháng cuối ưu đãi vs đầu thả nổi |
+
+### 🟡 Nice-to-Have (Tương lai)
+
+| Feature | Mô tả | Complexity |
+|---------|--------|------------|
+| **Preset ngân hàng** | Dropdown chọn VCB/BIDV/VTB/VPB → auto-fill tham số | LOW |
+| **So sánh nhiều ngân hàng** | Bảng so sánh side-by-side | MEDIUM |
+| **Tích hợp tiết kiệm ↔ vay** | Rút tiết kiệm trả trước → tiết kiệm bao nhiêu lãi? | HIGH |
+| **Export PDF lịch trả nợ** | Xuất bảng amortization dạng PDF | MEDIUM |
+
+### 🔴 Anti-Features (Nên tránh)
+
+| Feature | Tại sao nên tránh | Thay thế |
+|---------|---------------------|----------|
+| **Tự động crawl lãi suất** | DOM đổi, GAS timeout, lãi suất theo từng KH | Người dùng tự nhập |
+| **Backend GAS cho tính toán** | Tăng latency, quota GAS không cần thiết | 100% frontend |
+| **Tích hợp CIC** | API không public, phức tạp pháp lý | Disclaimer tham khảo |
+| **Hỗ trợ lãi kép** | VN dùng lãi đơn trên dư nợ giảm dần | Simple interest only |
+| **D3.js** | Phình bundle 500KB+ | Chart.js đủ dùng |
 
 ---
 
 ## Feature Dependencies
 
-Sơ đồ phụ thuộc giữa các tính năng đã có (v1.0) và các tính năng mới (v2.0):
-
-```
-┌────────────────────────────────────────────────────────┐
-│                   v1.0 EXISTING CORE                   │
-│  [DB-01: Sheets DB] ─── [BOT-01: Telegram Web App]     │
-│  [DEP-01: Deposit CRUD] ─ [DEP-02: Rollover Action]    │
-└──────────────────────────┬─────────────────────────────┘
-                           │
-                           ▼
-┌────────────────────────────────────────────────────────┐
-│                   v2.0 NEW CAPABILITIES                │
-│                                                        │
-│  [BOT-01] ─────────────► [AUTH-02: HMAC Auth]          │
-│                                 │                      │
-│                                 ▼                      │
-│                          [GAP-03: Chat ID Auto-link]   │
-│                                                        │
-│  [DEP-02: Rollover] ───► [HIST-01: Lineage Tree]       │
-│                                                        │
-│  [DEP-01: CRUD] ───────► [STAT-02: Analytics Charts]   │
-│                                 ▲                      │
-│                                 │                      │
-│  [GAP-02: Custom Bank] ─────────┘                      │
-│                                                        │
-│  [GAP-01: UserSelector] ── (Desktop Mock Auth)         │
-└──────────────────────────┬─────────────────────────────┘
-```
-
-### Dependency Notes
-
-- **`AUTH-02` (HMAC Auth) phụ thuộc `BOT-01`**: Backend `AuthService.js` lấy `TELEGRAM_BOT_TOKEN` từ Script Properties để kiểm tra chữ ký HMAC của `initData` truyền lên từ SDK `@telegram-apps/sdk`.
-- **`GAP-03` (Chat ID Auto-link) phụ thuộc `AUTH-02`**: Sau khi HMAC được xác thực thành công, Telegram `user.id` được trích xuất tin cậy từ `initData` và ghi nhận vào cột `telegram_chat_id` trong sheet `Users`.
-- **`HIST-01` (Lineage Tree) phụ thuộc `DEP-02`**: Cây phả hệ phụ thuộc vào cặp trường dữ liệu `parent_id` và `child_id` được ghi lại trong quá trình thực hiện giao dịch Tái tục (Rollover).
-- **`STAT-02` (Portfolio Analytics) phụ thuộc `DEP-01` & `GAP-02`**: Biểu đồ phân tích tỷ trọng nhóm các khoản gửi active theo `user_bankcode` (hỗ trợ bankcode nhập tay mới từ `GAP-02`) và theo khoảng thời gian gửi.
+- **LOAN-05 → Tab System**: Mở rộng `ActiveTab` trong `App.tsx`. Không ảnh hưởng tab hiện tại.
+- **LOAN-02 → Không phụ thuộc backend**: Toàn bộ tính toán chạy frontend.
+- **LOAN-03 → Chart.js**: Tái sử dụng Chart.js đã bundle. Thêm BarController nếu chưa register.
+- **LOAN-04 → LOAN-02**: Form tham số feed trực tiếp vào engine.
 
 ---
-
-## MVP Definition (v2.0 Capabilities Scope)
-
-### Launch With (Cốt lõi cho v2.0)
-
-- [x] **AUTH-02 (HMAC Verification)** — Triển khai thuật toán mã hóa HMAC-SHA256 chuẩn mã nguồn Telegram trong `AuthService.js` và cập nhật handler API backend.
-- [x] **GAP-03 (Chat ID Auto-linking)** — Tự động ghi `telegram_chat_id` khi gọi API `get_deposits` có `initData` hợp lệ.
-- [x] **HIST-01 (Deposit Lineage Tree UI)** — Modal/View trực quan hóa cây dòng tiền tái tục, hiển thị các nút khoản gửi qua các thế hệ và tính tổng lãi kép thu được.
-- [x] **STAT-02 (Portfolio Allocation & WAIR)** — Thêm biểu đồ tròn phân bổ theo kỳ hạn (<3m, 3-6m, 6-12m, >12m) và thẻ hiển thị Lãi suất trung bình gia quyền (WAIR).
-- [x] **GAP-01 (UserSelector Startup)** — Đưa component lựa chọn tài khoản lên giao diện chính khi chưa có session Telegram.
-- [x] **GAP-02 (Dynamic Bank Code Input)** — Cho phép nhập mã ngân hàng tùy chỉnh trực tiếp trên `DepositForm.tsx`.
-
-### Add After Validation (v2.x)
-
-- [ ] **Xuất hình ảnh Phả hệ khoản gửi** — Tính năng chia sẻ sơ đồ cây phả hệ dưới dạng file ảnh PNG để lưu trữ.
-- [ ] **Cảnh báo vượt ngưỡng tập trung tài sản** — Hiển thị cảnh báo nếu tỷ trọng tiền gửi ở 1 ngân hàng vượt quá 50% tổng tài sản.
-
-### Future Consideration (v3.0+)
-
-- [ ] **Tái tục phân nhánh (Split/Merge Rollover)** — Hỗ trợ 1 khoản gửi đáo hạn tách làm 2 khoản mới hoặc gộp 2 khoản thành 1 khoản lớn.
-- [ ] **So sánh lãi suất thị trường** — Đánh giá hiệu quả lãi suất khoản gửi so với mặt bằng chung thị trường.
-
----
-
-## Feature Prioritization Matrix
-
-| Feature | User Value | Implementation Cost | Priority |
-|---------|------------|---------------------|----------|
-| **Xác thực HMAC-SHA256 (`AUTH-02`)** | HIGH | LOW | P1 |
-| **Auto-link Chat ID (`GAP-03`)** | HIGH | LOW | P1 |
-| **Phân tích Tỷ trọng & WAIR (`STAT-02`)** | HIGH | MEDIUM | P1 |
-| **Cây Phả hệ Tái tục (`HIST-01`)** | HIGH | MEDIUM | P1 |
-| **Nhập mã Bank tùy chỉnh (`GAP-02`)** | MEDIUM | LOW | P1 |
-| **UserSelector Startup (`GAP-01`)** | MEDIUM | LOW | P1 |
-| **Cảnh báo Ngưỡng Tỷ trọng Bank** | LOW | LOW | P2 |
-| **Export Ảnh Cây Phả hệ** | LOW | MEDIUM | P3 |
-
-**Priority Key:**
-- **P1**: Phải có trong bản phát hành v2.0.
-- **P2**: Nên có, sẽ bổ sung ở v2.x.
-- **P3**: Ý tưởng cho tương lai.
-
----
-
-## Competitor Feature Analysis
-
-| Feature | Fin-bot-miniapp | Generic Sheet Tracker | Save Manager v2.0 |
-|---------|-----------------|----------------──────-|-------------------|
-| **Xác thực WebApp** | Lấy Plain Telegram User ID | Không xác thực | **HMAC-SHA256 2-Step Hash** theo tiêu chuẩn bảo mật Telegram |
-| **Theo dõi Tái tục** | Không hỗ trợ | Nhập ghi chú thủ công | **Cây Phả hệ Lineage Tree** tự động kết nối `parent_id` ➔ `child_id` |
-| **Phân tích Tài sản** | Chi tiêu đơn thuần | Bảng tính tĩnh | **Phân bổ Ngân hàng + Phân bổ Kỳ hạn + Lãi suất gia quyền (WAIR)** |
-| **Trải nghiệm Dev** | Yêu cầu Server Docker | Sửa tay trên Sheets | **Chế độ kép (Hybrid)**: Telegram Mini App real + Browser Desktop Mock |
-
----
-
-## Technical Specifications & Implementations
-
-### 1. Telegram HMAC-SHA256 Validation Algorithm (`AUTH-02`)
-
-```javascript
-// Cấu trúc thuật toán chuẩn Telegram WebApp verification trên Google Apps Script:
-// 1. Secret Key = HMAC-SHA256(key="WebAppData", msg=bot_token)
-var secretKey = Utilities.computeHmacSha256Signature(botToken, "WebAppData");
-
-// 2. Data Check String = Array of "key=value" sorted alphabetically by key (excluding 'hash'), joined by "\n"
-var sortedKeys = Object.keys(params).filter(k => k !== 'hash').sort();
-var dataCheckString = sortedKeys.map(k => k + '=' + params[k]).join('\n');
-
-// 3. Calculated Hash = HMAC-SHA256(key=secretKey, msg=dataCheckString) -> converted to hex string
-var signatureBytes = Utilities.computeHmacSha256Signature(dataCheckString, secretKey);
-var calculatedHash = signatureBytes.map(b => (b < 0 ? b + 256 : b).toString(16).padStart(2, '0')).join('');
-
-// 4. Verify calculatedHash === params.hash && (now - auth_date) <= 86400
-```
-
-### 2. Deposit Lineage Tree Data Traversal (`HIST-01`)
-
-Đoạn mã thuật toán tìm kiếm cây phả hệ 2 chiều (ngược về khoản đầu tiên & xuôi theo các khoản tái tục tiếp theo):
-
-```typescript
-export function buildDepositLineage(targetId: string, allDeposits: Deposit[]): Deposit[] {
-  const depositMap = new Map<string, Deposit>(allDeposits.map(d => [d.id, d]));
-  const target = depositMap.get(targetId);
-  if (!target) return [];
-
-  // 1. Tra cứu ngược về Gốc (Ancestor path)
-  const ancestors: Deposit[] = [];
-  let curr: Deposit | undefined = target;
-  while (curr && curr.parent_id && depositMap.has(curr.parent_id)) {
-    curr = depositMap.get(curr.parent_id);
-    if (curr) ancestors.unshift(curr); // Thêm vào đầu danh sách
-  }
-
-  // 2. Tra cứu xuôi về Con/Cháu (Descendant path)
-  const descendants: Deposit[] = [];
-  curr = target;
-  while (curr && curr.child_id && depositMap.has(curr.child_id)) {
-    curr = depositMap.get(curr.child_id);
-    if (curr) descendants.push(curr); // Thêm vào cuối danh sách
-  }
-
-  // Chuỗi lineage hoàn chỉnh từ Gốc đến Hiện tại và các Con
-  return [...ancestors, target, ...descendants];
-}
-```
-
----
-
-## Sources
-
-- [Telegram Web Apps Documentation — Validating Data Received via the Mini App](https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app)
-- [Google Apps Script Utilities Reference — computeHmacSha256Signature](https://developers.google.com/apps-script/reference/utilities/utilities#computehmacsha256signaturevalue,-key)
-- [Chart.js Doughnut Documentation](https://www.chartjs.org/docs/latest/charts/doughnut.html)
-
----
-*Feature research completed for: Save Manager v2.0 Polish & Analytics*  
-*Researched date: 2026-08-11*
+*Feature research completed for: Save Manager v3.0 Mortgage Loan Estimator*
+*Researched: 2026-08-12*
