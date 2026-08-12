@@ -12,6 +12,7 @@ Quản lý chính xác trạng thái các khoản tiết kiệm, hỗ trợ tái
 
 - **Shipped Version:** v1.0 (2026-07-14)
 - **Status:** Hoàn tất 5 phase cốt lõi của MVP, tích hợp hệ thống Database Google Sheets, API GAS, Telegram Bot Webhook, daily triggers cảnh báo và frontend React SPA dạng single-file.
+- **Phase 9 complete (2026-08-12):** Domain types TypeScript + pure calculation engine `calculateMortgage()` cho mortgage estimation — hỗ trợ 2 phương thức trả nợ, lãi suất 2 giai đoạn, ân hạn gốc, integer VND arithmetic.
 
 ## Current Milestone: v3.0 Mortgage Loan Estimator
 
