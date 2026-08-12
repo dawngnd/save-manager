@@ -30,7 +30,7 @@
 
 ### 🚧 v3.0 Mortgage Loan Estimator (Phases 9-12)
 
-- [ ] **Phase 9: Types & Calculation Engine** - TypeScript domain types và mortgage calculation engine hỗ trợ 2 phương thức trả nợ, lãi suất 2 giai đoạn, ân hạn gốc, integer arithmetic.
+- [x] **Phase 9: Types & Calculation Engine** - TypeScript domain types và mortgage calculation engine hỗ trợ 2 phương thức trả nợ, lãi suất 2 giai đoạn, ân hạn gốc, integer arithmetic. (completed 2026-08-12)
 - [ ] **Phase 10: Form UI & Bank Presets** - Form nhập tham số khoản vay với progressive disclosure, bank preset selector auto-fill, và localStorage persist.
 - [ ] **Phase 11: Charts & Visualization** - Biểu đồ stacked bar phân bổ gốc/lãi, biểu đồ lũy kế area chart, và cảnh báo vách đá lãi suất.
 - [ ] **Phase 12: Summary, Schedule & Tab Integration** - Thẻ KPI tổng kết, bảng lịch trả nợ accordion, MortgageTab wrapper và tích hợp tab vào App.tsx.
@@ -43,41 +43,49 @@
 <summary>✅ v1.0 & v2.0 Phase Details (Phases 1-8)</summary>
 
 ### Phase 1: DB & clasp Project Setup
+
 - **Goal**: Setup Google Sheets database schema and local clasp synchronization.
 - **Requirements**: `DB-01`
 - **Status**: Complete (2026-07-10)
 
 ### Phase 2: Backend DB Operations & Calculations
+
 - **Goal**: Build backend CRUD functions, LockService guards, and expected interest calculations.
 - **Requirements**: `DB-02`, `API-01`, `API-02`, `API-03`
 - **Status**: Complete (2026-07-10)
 
 ### Phase 3: Telegram Bot Webhook Integration
+
 - **Goal**: Connect Telegram Bot API webhooks and set up daily maturity alerts cron job.
 - **Requirements**: `BOT-01`, `NOTF-01`
 - **Status**: Complete (2026-07-10)
 
 ### Phase 4: Frontend UI (TWA) & Auth
+
 - **Goal**: Create the single-file Vite/TS/Tailwind SPA with Telegram Apps SDK integration and deposit forms.
 - **Requirements**: `UI-01`, `UI-02`, `UI-03`, `DEP-01`
 - **Status**: Complete (2026-07-10)
 
 ### Phase 5: Charts & Rollover Mechanics
+
 - **Goal**: Build growth projection timeseries chart and execute rollover transaction workflow.
 - **Requirements**: `STAT-01`, `DEP-02`
 - **Status**: Complete (2026-07-10)
 
 ### Phase 6: Security & Whitelist Authentication
+
 - **Goal**: Bảo mật REST API bằng xác thực HMAC-SHA256 trên GAS backend, chống replay attack qua auth_date 24h, kiểm tra chat_id thuộc whitelist cấu hình trong GAS Script Properties, và duy trì Mock Auth cho môi trường dev desktop.
 - **Requirements**: `AUTH-02`
 - **Status**: Complete (2026-08-11)
 
 ### Phase 7: Portfolio Analytics & Asset Metrics
+
 - **Goal**: Cung cấp bức tranh tổng quan phân bổ danh mục tiết kiệm active theo ngân hàng, nhóm kỳ hạn và đo lường chỉ số lãi suất trung bình gia quyền (WAIR).
 - **Requirements**: `STAT-02`
 - **Status**: Complete (2026-08-11)
 
 ### Phase 8: Deposit Lineage Tree & History
+
 - **Goal**: Trực quan hóa lịch sử dòng tiền qua các chu kỳ tái tục (Rollover), dựng sơ đồ phả hệ cây 2 chiều và đo lường tổng tiền lãi tích lũy cùng hệ số tăng trưởng qua thời gian.
 - **Requirements**: `HIST-01`
 - **Status**: Complete (2026-08-11)
@@ -85,6 +93,7 @@
 </details>
 
 ### Phase 9: Types & Calculation Engine
+
 - **Goal**: Xây dựng domain types TypeScript và pure calculation engine cho mortgage estimation, hỗ trợ 2 phương thức trả nợ (Dư nợ giảm dần + Annuity), lãi suất 2 giai đoạn (ưu đãi → thả nổi), ân hạn gốc, và integer VND arithmetic.
 - **Requirements**: `CALC-01`, `CALC-02`, `CALC-03`, `CALC-04`, `CALC-05`
 - **Success Criteria**:
@@ -95,6 +104,7 @@
   5. User cấu hình ân hạn gốc và thấy trong giai đoạn ân hạn chỉ phải trả lãi, dư nợ gốc không thay đổi.
 
 ### Phase 10: Form UI & Bank Presets
+
 - **Goal**: Xây dựng giao diện form nhập tham số khoản vay với progressive disclosure (3 fields cơ bản hiển thị, phần nâng cao ẩn), bank preset selector auto-fill lãi suất phổ biến, và localStorage persist inputs.
 - **Requirements**: `CONF-01`, `CONF-02`, `CONF-03`, `CONF-04`
 - **Success Criteria**:
@@ -104,6 +114,7 @@
   4. User đóng app rồi mở lại — các tham số đã nhập trước đó được khôi phục từ localStorage.
 
 ### Phase 11: Charts & Visualization
+
 - **Goal**: Xây dựng biểu đồ stacked bar phân bổ gốc/lãi theo năm (default) với option xem theo tháng, biểu đồ lũy kế lãi vs gốc dạng area/line chart, và cảnh báo trực quan "vách đá lãi suất" khi chuyển từ ưu đãi sang thả nổi.
 - **Requirements**: `VIS-03`, `VIS-04`, `VIS-05`
 - **Success Criteria**:
@@ -112,6 +123,7 @@
   3. User thấy cảnh báo trực quan highlight rõ chênh lệch payment khi chuyển từ giai đoạn lãi suất ưu đãi sang thả nổi ("vách đá lãi suất").
 
 ### Phase 12: Summary, Schedule & Tab Integration
+
 - **Goal**: Xây dựng thẻ KPI tổng kết, bảng lịch trả nợ chi tiết với accordion gộp theo năm, MortgageTab wrapper component, và tích hợp tab "Vay" vào App.tsx cạnh Analytics.
 - **Requirements**: `VIS-01`, `VIS-02`, `INTG-01`
 - **Success Criteria**:
@@ -162,7 +174,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 6. Security & Whitelist Authentication | v2.0 | 1/1 | Complete | 2026-08-11 |
 | 7. Portfolio Analytics & Asset Metrics | v2.0 | 1/1 | Complete | 2026-08-11 |
 | 8. Deposit Lineage Tree & History | v2.0 | 1/1 | Complete | 2026-08-11 |
-| 9. Types & Calculation Engine | v3.0 | 0/? | Pending | — |
+| 9. Types & Calculation Engine | v3.0 | 1/1 | Complete    | 2026-08-12 |
 | 10. Form UI & Bank Presets | v3.0 | 0/? | Pending | — |
 | 11. Charts & Visualization | v3.0 | 0/? | Pending | — |
 | 12. Summary, Schedule & Tab Integration | v3.0 | 0/? | Pending | — |
