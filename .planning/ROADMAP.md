@@ -175,6 +175,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 7. Portfolio Analytics & Asset Metrics | v2.0 | 1/1 | Complete | 2026-08-11 |
 | 8. Deposit Lineage Tree & History | v2.0 | 1/1 | Complete | 2026-08-11 |
 | 9. Types & Calculation Engine | v3.0 | 1/1 | Complete    | 2026-08-12 |
-| 10. Form UI & Bank Presets | v3.0 | 0/? | Pending | — |
+| 10. Form UI & Bank Presets | v3.0 | 1/1 | Complete   | 2026-08-12 |
 | 11. Charts & Visualization | v3.0 | 0/? | Pending | — |
 | 12. Summary, Schedule & Tab Integration | v3.0 | 0/? | Pending | — |

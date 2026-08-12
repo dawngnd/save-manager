@@ -25,10 +25,10 @@ Requirements for Mortgage Loan Estimator module. Each maps to roadmap phases.
 
 ### Configuration
 
-- [ ] **CONF-01**: User nhập tham số động: tiền vay (VNĐ), thời hạn (năm), lãi suất ưu đãi (%/năm), thời gian ưu đãi (tháng), lãi suất thả nổi (%/năm), phương thức trả nợ
-- [ ] **CONF-02**: User chọn preset ngân hàng (Vietcombank, BIDV, Vietinbank, VPBank) để auto-fill tham số lãi suất phổ biến
-- [ ] **CONF-03**: Form hiển thị 3 field cơ bản (tiền vay, thời hạn, lãi suất), phần nâng cao ẩn trong expandable section
-- [ ] **CONF-04**: Tham số nhập được lưu vào localStorage và khôi phục khi mở lại app
+- [x] **CONF-01**: User nhập tham số động: tiền vay (VNĐ), thời hạn (năm), lãi suất ưu đãi (%/năm), thời gian ưu đãi (tháng), lãi suất thả nổi (%/năm), phương thức trả nợ
+- [x] **CONF-02**: User chọn preset ngân hàng (Vietcombank, BIDV, Vietinbank, VPBank) để auto-fill tham số lãi suất phổ biến
+- [x] **CONF-03**: Form hiển thị 3 field cơ bản (tiền vay, thời hạn, lãi suất), phần nâng cao ẩn trong expandable section
+- [x] **CONF-04**: Tham số nhập được lưu vào localStorage và khôi phục khi mở lại app
 
 ### Integration
 
@@ -73,10 +73,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CALC-03 | Phase 9 | Pending |
 | CALC-04 | Phase 9 | Pending |
 | CALC-05 | Phase 9 | Pending |
-| CONF-01 | Phase 10 | Pending |
-| CONF-02 | Phase 10 | Pending |
-| CONF-03 | Phase 10 | Pending |
-| CONF-04 | Phase 10 | Pending |
+| CONF-01 | Phase 10 | Complete |
+| CONF-02 | Phase 10 | Complete |
+| CONF-03 | Phase 10 | Complete |
+| CONF-04 | Phase 10 | Complete |
 | VIS-03 | Phase 11 | Pending |
 | VIS-04 | Phase 11 | Pending |
 | VIS-05 | Phase 11 | Pending |
@@ -85,6 +85,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INTG-01 | Phase 12 | Pending |
 
 **Coverage:**
+
 - v3.0 requirements: 15 total
 - Mapped to phases: 15 ✅
 - Unmapped: 0
