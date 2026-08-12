@@ -19,9 +19,9 @@ Requirements for Mortgage Loan Estimator module. Each maps to roadmap phases.
 
 - [ ] **VIS-01**: User thấy bảng lịch trả nợ chi tiết theo tháng với accordion gộp theo năm
 - [ ] **VIS-02**: User thấy thẻ tổng kết KPI hiển thị: tổng lãi, peak payment tháng đầu, payment tháng đầu thả nổi
-- [ ] **VIS-03**: User thấy biểu đồ stacked bar phân bổ gốc/lãi theo năm (default) với option xem theo tháng
-- [ ] **VIS-04**: User thấy biểu đồ lũy kế lãi vs gốc đã trả dạng area/line chart
-- [ ] **VIS-05**: User thấy cảnh báo "vách đá lãi suất" highlight chênh lệch payment khi chuyển từ ưu đãi sang thả nổi
+- [x] **VIS-03**: User thấy biểu đồ stacked bar phân bổ gốc/lãi theo năm (default) với option xem theo tháng
+- [x] **VIS-04**: User thấy biểu đồ lũy kế lãi vs gốc đã trả dạng area/line chart
+- [x] **VIS-05**: User thấy cảnh báo "vách đá lãi suất" highlight chênh lệch payment khi chuyển từ ưu đãi sang thả nổi
 
 ### Configuration
 
@@ -77,9 +77,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CONF-02 | Phase 10 | Complete |
 | CONF-03 | Phase 10 | Complete |
 | CONF-04 | Phase 10 | Complete |
-| VIS-03 | Phase 11 | Pending |
-| VIS-04 | Phase 11 | Pending |
-| VIS-05 | Phase 11 | Pending |
+| VIS-03 | Phase 11 | Complete |
+| VIS-04 | Phase 11 | Complete |
+| VIS-05 | Phase 11 | Complete |
 | VIS-01 | Phase 12 | Pending |
 | VIS-02 | Phase 12 | Pending |
 | INTG-01 | Phase 12 | Pending |
