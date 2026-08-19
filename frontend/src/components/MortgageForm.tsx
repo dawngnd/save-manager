@@ -39,6 +39,7 @@ export const MortgageForm: React.FC<MortgageFormProps> = ({ onResultChange }) =>
   const [selectedPresetId, setSelectedPresetId] = useState<string>('vietcombank');
   const [showAdvanced, setShowAdvanced] = useState<boolean>(false);
   const [mortgageResult, setMortgageResult] = useState<MortgageResult | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Restore from localStorage on mount (CONF-04) with try-catch safety
   useEffect(() => {
@@ -102,6 +103,7 @@ export const MortgageForm: React.FC<MortgageFormProps> = ({ onResultChange }) =>
       const parsedGrace = parseFloat(gracePeriodMonths) || 0;
       const totalMonths = parsedTenure * 12;
       const parsedSettlement = earlySettlementMonth ? parseInt(earlySettlementMonth) : totalMonths;
+      const effectiveMonths = Math.min(parsedSettlement, totalMonths);
 
       // Validation: skip calculation if inputs are invalid
       if (
@@ -110,10 +112,11 @@ export const MortgageForm: React.FC<MortgageFormProps> = ({ onResultChange }) =>
         isNaN(parsedPromoRate) || parsedPromoRate < 0 ||
         isNaN(parsedPromoMonths) || parsedPromoMonths < 0 ||
         isNaN(parsedFloatingRate) || parsedFloatingRate < 0 ||
-        parsedGrace >= parsedTenure * 12 ||
+        parsedGrace >= effectiveMonths ||
         parsedSettlement <= 0 || parsedSettlement > totalMonths
       ) {
         setMortgageResult(null);
+        setErrorMsg(null);
         return;
       }
 
@@ -131,9 +134,11 @@ export const MortgageForm: React.FC<MortgageFormProps> = ({ onResultChange }) =>
       try {
         const res = calculateMortgage(inputs);
         setMortgageResult(res);
+        setErrorMsg(null);
       } catch (err) {
         console.error('Mortgage calculation error:', err);
         setMortgageResult(null);
+        setErrorMsg(err instanceof Error ? err.message : 'Có lỗi xảy ra khi tính toán khoản vay');
       }
     }, 300);
 
@@ -311,6 +316,11 @@ export const MortgageForm: React.FC<MortgageFormProps> = ({ onResultChange }) =>
       )}
 
       {/* KPI Cards Summary Section (D-08) */}
+      {errorMsg && (
+        <div className="bg-[#2a1518] border border-[#5c2a2e] rounded-xl px-4 py-3 text-sm text-[#ff8a8a]">
+          {errorMsg}
+        </div>
+      )}
       <MortgageKpiCards
         result={mortgageResult}
         loanAmount={parseFloat(loanAmount) || 0}
