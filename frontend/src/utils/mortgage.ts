@@ -28,13 +28,13 @@ export function calculateMortgage(inputs: LoanInputs): MortgageResult {
         if (month === effectiveMonths) {
           principalPaid = remainingBalance;
         } else {
-          principalPaid = Math.round(inputs.loanAmount / (effectiveMonths - inputs.gracePeriodMonths));
+          principalPaid = Math.round(inputs.loanAmount / (totalMonths - inputs.gracePeriodMonths));
         }
       } else { // annuity
         if (month === effectiveMonths) {
           principalPaid = remainingBalance;
         } else {
-          const remainingMonths = effectiveMonths - month + 1;
+          const remainingMonths = totalMonths - month + 1;
           if (currentRate === 0) {
             principalPaid = Math.round(remainingBalance / remainingMonths);
           } else {
