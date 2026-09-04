@@ -9,6 +9,7 @@ import { BankShareChart } from './BankShareChart';
 import { UserShareChart } from './UserShareChart';
 import { TermShareChart } from './TermShareChart';
 import { WairKpiCard } from './WairKpiCard';
+import { YearlyInterestSummary } from './YearlyInterestSummary';
 import { GoldForm } from './GoldForm';
 import { GoldList } from './GoldList';
 import { MortgageTab } from './MortgageTab';
@@ -420,6 +421,7 @@ export const App: React.FC = () => {
             ) : (
               <>
                 <WairKpiCard deposits={deposits} />
+                <YearlyInterestSummary deposits={deposits} />
                 <BankShareChart deposits={deposits} />
                 <TermShareChart deposits={deposits} />
               </>
