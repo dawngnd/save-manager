@@ -50,7 +50,6 @@ export const InterestRateChart: React.FC<InterestRateChartProps> = ({ deposits }
   const chartInstanceRef = useRef<Chart | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
-  const [chartWidth, setChartWidth] = useState<number>(0);
 
   // Build per-bank monthly average interest rates
   const buildData = () => {
@@ -122,6 +121,7 @@ export const InterestRateChart: React.FC<InterestRateChartProps> = ({ deposits }
   };
 
   const chartData = buildData();
+  const calcWidth = chartData ? Math.min(Math.max(chartData.months.length * 60, 320), 4000) : 320;
 
   // Color palette for banks
   const bankColors = [
@@ -138,26 +138,26 @@ export const InterestRateChart: React.FC<InterestRateChartProps> = ({ deposits }
   useEffect(() => {
     if (isCollapsed || !chartData || !canvasRef.current) return;
 
+    const canvas = canvasRef.current;
+    const container = scrollContainerRef.current;
+    const containerWidth = container?.clientWidth || 320;
+    const actualWidth = Math.min(Math.max(calcWidth, containerWidth), 4000);
+
+    const rawDpr = window.devicePixelRatio || 1;
+    const safeDpr = actualWidth * rawDpr <= 4096 ? rawDpr : 1;
+
     if (chartInstanceRef.current) {
       chartInstanceRef.current.destroy();
+      chartInstanceRef.current = null;
     }
 
-    // Width: 80px per month, minimum = container width
-    const containerWidth = scrollContainerRef.current?.clientWidth || 320;
-    const width = Math.max(containerWidth, chartData.months.length * 80);
-    setChartWidth(width);
-
-    const ctx = canvasRef.current.getContext('2d');
+    const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Set canvas size thủ công — responsive:false để Chart.js không co canvas về container
-    const canvasHeight = 200;
-    const dpr = window.devicePixelRatio || 1;
-    canvasRef.current.width = width * dpr;
-    canvasRef.current.height = canvasHeight * dpr;
-    canvasRef.current.style.width = width + 'px';
-    canvasRef.current.style.height = canvasHeight + 'px';
-    ctx.scale(dpr, dpr);
+    canvas.style.width = `${actualWidth}px`;
+    canvas.style.height = '200px';
+    canvas.width = actualWidth;
+    canvas.height = 200;
 
     chartInstanceRef.current = new Chart(ctx, {
       type: 'line',
@@ -180,6 +180,7 @@ export const InterestRateChart: React.FC<InterestRateChartProps> = ({ deposits }
       options: {
         responsive: false,
         maintainAspectRatio: false,
+        devicePixelRatio: safeDpr,
         interaction: { mode: 'index', intersect: false },
         plugins: {
           legend: {
@@ -237,17 +238,25 @@ export const InterestRateChart: React.FC<InterestRateChartProps> = ({ deposits }
     });
 
     // Auto-scroll to end
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollLeft = scrollContainerRef.current.scrollWidth;
+    let scrollTimer: any;
+    if (container) {
+      scrollTimer = setTimeout(() => {
+        container.scrollLeft = container.scrollWidth;
+      }, 60);
     }
 
     return () => {
+      if (scrollTimer) clearTimeout(scrollTimer);
       if (chartInstanceRef.current) {
         chartInstanceRef.current.destroy();
         chartInstanceRef.current = null;
       }
+      if (canvas) {
+        canvas.width = 1;
+        canvas.height = 1;
+      }
     };
-  }, [isCollapsed, chartData]);
+  }, [isCollapsed, chartData, calcWidth]);
 
   if (!chartData || chartData.datasets.length === 0) {
     return (
@@ -299,7 +308,7 @@ export const InterestRateChart: React.FC<InterestRateChartProps> = ({ deposits }
             className="w-full overflow-x-auto overflow-y-hidden chart-scroll"
             style={{ WebkitOverflowScrolling: 'touch' }}
           >
-            <div style={{ width: chartWidth > 0 ? `${chartWidth}px` : '100%' }}>
+            <div style={{ width: `${calcWidth}px`, minWidth: '100%', height: '200px', position: 'relative' }}>
               <canvas ref={canvasRef} />
             </div>
           </div>

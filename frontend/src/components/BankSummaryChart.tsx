@@ -34,7 +34,6 @@ export const BankSummaryChart: React.FC<BankSummaryChartProps> = ({ deposits }) 
   const chartInstanceRef = useRef<Chart | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
-  const [chartWidth, setChartWidth] = useState<number>(0);
 
   // Group active deposits by user_bankcode
   const bankData: BankData[] = (() => {
@@ -58,30 +57,31 @@ export const BankSummaryChart: React.FC<BankSummaryChartProps> = ({ deposits }) 
 
   const totalAmount = bankData.reduce((s, d) => s + d.amount, 0);
   const totalInterest = bankData.reduce((s, d) => s + d.estimatedInterest, 0);
+  const calcWidth = Math.min(Math.max(bankData.length * 90, 320), 4000);
 
   useEffect(() => {
     if (isCollapsed || bankData.length === 0 || !canvasRef.current) return;
 
+    const canvas = canvasRef.current;
+    const container = scrollContainerRef.current;
+    const containerWidth = container?.clientWidth || 320;
+    const actualWidth = Math.min(Math.max(calcWidth, containerWidth), 4000);
+
+    const rawDpr = window.devicePixelRatio || 1;
+    const safeDpr = actualWidth * rawDpr <= 4096 ? rawDpr : 1;
+
     if (chartInstanceRef.current) {
       chartInstanceRef.current.destroy();
+      chartInstanceRef.current = null;
     }
 
-    // 120px mỗi cột, tối thiểu = container width
-    const containerWidth = scrollContainerRef.current?.clientWidth || 400;
-    const calcWidth = Math.max(bankData.length * 120, containerWidth);
-    setChartWidth(calcWidth);
-
-    const ctx = canvasRef.current.getContext('2d');
+    const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Set canvas size thủ công — responsive:false để Chart.js không co canvas về container
-    const canvasHeight = Math.max(200, bankData.length * 60);
-    const dpr = window.devicePixelRatio || 1;
-    canvasRef.current.width = calcWidth * dpr;
-    canvasRef.current.height = canvasHeight * dpr;
-    canvasRef.current.style.width = calcWidth + 'px';
-    canvasRef.current.style.height = canvasHeight + 'px';
-    ctx.scale(dpr, dpr);
+    canvas.style.width = `${actualWidth}px`;
+    canvas.style.height = '200px';
+    canvas.width = actualWidth;
+    canvas.height = 200;
 
     chartInstanceRef.current = new Chart(ctx, {
       type: 'bar',
@@ -105,6 +105,7 @@ export const BankSummaryChart: React.FC<BankSummaryChartProps> = ({ deposits }) 
       options: {
         responsive: false,
         maintainAspectRatio: false,
+        devicePixelRatio: safeDpr,
         plugins: {
           legend: {
             display: true,
@@ -166,8 +167,12 @@ export const BankSummaryChart: React.FC<BankSummaryChartProps> = ({ deposits }) 
         chartInstanceRef.current.destroy();
         chartInstanceRef.current = null;
       }
+      if (canvas) {
+        canvas.width = 1;
+        canvas.height = 1;
+      }
     };
-  }, [isCollapsed, bankData]);
+  }, [isCollapsed, bankData, calcWidth]);
 
   if (bankData.length === 0) {
     return (
@@ -214,7 +219,7 @@ export const BankSummaryChart: React.FC<BankSummaryChartProps> = ({ deposits }) 
             className="w-full overflow-x-auto overflow-y-hidden chart-scroll"
             style={{ WebkitOverflowScrolling: 'touch' }}
           >
-            <div style={{ width: chartWidth > 0 ? `${chartWidth}px` : '100%' }}>
+            <div style={{ width: `${calcWidth}px`, minWidth: '100%', height: '200px', position: 'relative' }}>
               <canvas ref={canvasRef} />
             </div>
           </div>

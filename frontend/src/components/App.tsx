@@ -51,13 +51,7 @@ export const App: React.FC = () => {
   const [rolloverDeposit, setRolloverDeposit] = useState<Deposit | null>(null);
   const [isGoldFormOpen, setIsGoldFormOpen] = useState<boolean>(false);
 
-  // Chart toggles (chỉ hiển thị ở tab tiết kiệm)
-  const [showChart, setShowChart]             = useState<boolean>(false);
-  const [showBankSummary, setShowBankSummary] = useState<boolean>(false);
-  const [showRateChart, setShowRateChart]     = useState<boolean>(false);
   const [showDeposits, setShowDeposits]       = useState<boolean>(true);
-  const [showUserShare, setShowUserShare]     = useState<boolean>(false);
-  const [showUserShareChart, setShowUserShareChart] = useState<boolean>(false);
 
   // Giá vàng
   const [goldPrice, setGoldPrice]         = useState<GoldPrice | null>(null);
@@ -99,7 +93,7 @@ export const App: React.FC = () => {
     }
 
     if (viewParam === 'chart' || startParam === 'chart') {
-      setShowChart(true);
+      setActiveTab('analytics');
     }
 
     const initFetch = async () => {
@@ -176,57 +170,25 @@ export const App: React.FC = () => {
         {/* Header */}
         <div className="flex justify-between items-center bg-[#0e1621] border border-[#2b394a] rounded-2xl p-4 shadow-lg">
           <div className="flex items-center space-x-3">
-            <span className="text-3xl">{activeTab === 'gold' ? '🥇' : activeTab === 'mortgage' ? '🏠' : '💰'}</span>
+            <span className="text-3xl">{activeTab === 'gold' ? '🥇' : activeTab === 'mortgage' ? '🏠' : activeTab === 'analytics' ? '📊' : '💰'}</span>
             <div>
               <div className="text-xs text-[#708499] uppercase tracking-wider font-semibold">Save Manager</div>
               <div className="text-sm font-bold text-[#64b5f6]">
-                {activeTab === 'gold' ? 'Quản lý vàng' : activeTab === 'mortgage' ? 'Ước tính vay' : 'Quản lý tiết kiệm'}
+                {activeTab === 'gold' ? 'Quản lý vàng' : activeTab === 'mortgage' ? 'Ước tính vay' : activeTab === 'analytics' ? 'Báo cáo & Phân tích' : 'Quản lý tiết kiệm'}
               </div>
             </div>
           </div>
           <div className="flex flex-wrap items-center justify-end gap-1.5">
-            {activeTab === 'deposits' ? (
-              <>
-                <button
-                  onClick={refresh}
-                  disabled={loading}
-                  className="px-3 py-2 bg-[#2c3847] hover:bg-[#374657] text-xs font-semibold rounded-xl transition duration-150 cursor-pointer disabled:opacity-50"
-                  title="Lấy danh sách mới từ server"
-                >
-                  {loading ? '⏳' : '🔄'}
-                </button>
-                <button
-                  onClick={() => setShowChart(!showChart)}
-                  className={`px-3.5 py-2 text-xs font-semibold rounded-xl transition duration-150 cursor-pointer ${showChart ? 'bg-[#5288c1]/20 text-[#64b5f6]' : 'bg-[#2c3847] hover:bg-[#5288c1]/20 hover:text-[#64b5f6]'}`}
-                >
-                  📈
-                </button>
-                <button
-                  onClick={() => setShowBankSummary(!showBankSummary)}
-                  className={`px-3.5 py-2 text-xs font-semibold rounded-xl transition duration-150 cursor-pointer ${showBankSummary ? 'bg-[#4caf50]/20 text-[#4caf50]' : 'bg-[#2c3847] hover:bg-[#4caf50]/20 hover:text-[#4caf50]'}`}
-                >
-                  🏦
-                </button>
-                <button
-                  onClick={() => setShowRateChart(!showRateChart)}
-                  className={`px-3.5 py-2 text-xs font-semibold rounded-xl transition duration-150 cursor-pointer ${showRateChart ? 'bg-[#e91e63]/20 text-[#e91e63]' : 'bg-[#2c3847] hover:bg-[#e91e63]/20 hover:text-[#e91e63]'}`}
-                >
-                  📉
-                </button>
-                <button
-                  onClick={() => setShowUserShare(!showUserShare)}
-                  className={`px-3.5 py-2 text-xs font-semibold rounded-xl transition duration-150 cursor-pointer ${showUserShare ? 'bg-[#9c27b0]/20 text-[#ce93d8]' : 'bg-[#2c3847] hover:bg-[#9c27b0]/20 hover:text-[#ce93d8]'}`}
-                >
-                  🧩
-                </button>
-                <button
-                  onClick={() => setShowUserShareChart(!showUserShareChart)}
-                  className={`px-3.5 py-2 text-xs font-semibold rounded-xl transition duration-150 cursor-pointer ${showUserShareChart ? 'bg-[#64b5f6]/20 text-[#64b5f6]' : 'bg-[#2c3847] hover:bg-[#64b5f6]/20 hover:text-[#64b5f6]'}`}
-                >
-                  👥
-                </button>
-              </>
-            ) : (
+            {activeTab === 'deposits' || activeTab === 'analytics' ? (
+              <button
+                onClick={refresh}
+                disabled={loading}
+                className="px-3 py-2 bg-[#2c3847] hover:bg-[#374657] text-xs font-semibold rounded-xl transition duration-150 cursor-pointer disabled:opacity-50"
+                title="Lấy danh sách mới từ server"
+              >
+                {loading ? '⏳' : '🔄'}
+              </button>
+            ) : activeTab === 'gold' ? (
               <button
                 onClick={refreshGolds}
                 disabled={goldsLoading}
@@ -235,7 +197,7 @@ export const App: React.FC = () => {
               >
                 {goldsLoading ? '⏳' : '🔄'}
               </button>
-            )}
+            ) : null}
           </div>
         </div>
 
@@ -285,51 +247,43 @@ export const App: React.FC = () => {
 
         {/* ══════════ TAB: TIẾT KIỆM ══════════ */}
         {activeTab === 'deposits' && (
-          <>
-            {showChart && <GrowthChart deposits={deposits} />}
-            {showBankSummary && <BankSummaryChart deposits={deposits} />}
-            {showRateChart && <InterestRateChart deposits={deposits} />}
-            {showUserShare && <BankShareChart deposits={deposits} />}
-            {showUserShareChart && <UserShareChart deposits={deposits} />}
-
-            <div className="bg-[#0e1621] border border-[#2b394a] rounded-2xl p-5 shadow-2xl space-y-4">
-              <div className="flex justify-between items-center border-b border-[#2b394a] pb-3">
-                <div className="flex items-center space-x-2">
-                  <span className="text-lg">📋</span>
-                  <h2 className="text-lg font-bold text-[#f5f5f5]">Tất cả khoản tiết kiệm</h2>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="text-[10px] text-[#708499]">{deposits.length} khoản</div>
-                  <button
-                    onClick={() => setShowDeposits(!showDeposits)}
-                    className="px-2.5 py-1 text-xs font-semibold bg-[#2c3847] hover:bg-[#374657] text-[#64b5f6] rounded-lg transition duration-150 cursor-pointer"
-                  >
-                    {showDeposits ? 'Ẩn' : 'Hiện'}
-                  </button>
-                </div>
+          <div className="bg-[#0e1621] border border-[#2b394a] rounded-2xl p-5 shadow-2xl space-y-4">
+            <div className="flex justify-between items-center border-b border-[#2b394a] pb-3">
+              <div className="flex items-center space-x-2">
+                <span className="text-lg">📋</span>
+                <h2 className="text-lg font-bold text-[#f5f5f5]">Tất cả khoản tiết kiệm</h2>
               </div>
-
-              {showDeposits && (
-                <>
-                  {loading && deposits.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-16 space-y-3">
-                      <div className="w-7 h-7 border-3 border-[#5288c1] border-t-transparent rounded-full animate-spin"></div>
-                      <p className="text-xs text-[#708499] animate-pulse">Đang truy vấn dữ liệu...</p>
-                    </div>
-                  ) : error ? (
-                    <div className="bg-[#ff4d4d]/10 border border-[#ff4d4d]/20 text-[#ff4d4d] text-center p-4 rounded-xl space-y-2 text-xs">
-                      <p>{error}</p>
-                      <button onClick={refresh} className="px-4 py-1.5 bg-[#ff4d4d]/25 hover:bg-[#ff4d4d]/30 text-white rounded-lg font-semibold transition">
-                        Thử lại
-                      </button>
-                    </div>
-                  ) : (
-                    <DepositList deposits={deposits} onTriggerRollover={handleTriggerRollover} />
-                  )}
-                </>
-              )}
+              <div className="flex items-center space-x-2">
+                <div className="text-[10px] text-[#708499]">{deposits.length} khoản</div>
+                <button
+                  onClick={() => setShowDeposits(!showDeposits)}
+                  className="px-2.5 py-1 text-xs font-semibold bg-[#2c3847] hover:bg-[#374657] text-[#64b5f6] rounded-lg transition duration-150 cursor-pointer"
+                >
+                  {showDeposits ? 'Ẩn' : 'Hiện'}
+                </button>
+              </div>
             </div>
-          </>
+
+            {showDeposits && (
+              <>
+                {loading && deposits.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-16 space-y-3">
+                    <div className="w-7 h-7 border-3 border-[#5288c1] border-t-transparent rounded-full animate-spin"></div>
+                    <p className="text-xs text-[#708499] animate-pulse">Đang truy vấn dữ liệu...</p>
+                  </div>
+                ) : error ? (
+                  <div className="bg-[#ff4d4d]/10 border border-[#ff4d4d]/20 text-[#ff4d4d] text-center p-4 rounded-xl space-y-2 text-xs">
+                    <p>{error}</p>
+                    <button onClick={refresh} className="px-4 py-1.5 bg-[#ff4d4d]/25 hover:bg-[#ff4d4d]/30 text-white rounded-lg font-semibold transition">
+                      Thử lại
+                    </button>
+                  </div>
+                ) : (
+                  <DepositList deposits={deposits} onTriggerRollover={handleTriggerRollover} />
+                )}
+              </>
+            )}
+          </div>
         )}
 
         {/* ══════════ TAB: VÀNG ══════════ */}
@@ -422,9 +376,13 @@ export const App: React.FC = () => {
             ) : (
               <>
                 <WairKpiCard deposits={deposits} />
+                <GrowthChart deposits={deposits} />
+                <BankSummaryChart deposits={deposits} />
+                <InterestRateChart deposits={deposits} />
                 <YearlyInterestSummary deposits={deposits} />
                 <YearlyPrincipalInterestChart deposits={deposits} />
                 <BankShareChart deposits={deposits} />
+                <UserShareChart deposits={deposits} />
                 <TermShareChart deposits={deposits} />
               </>
             )}
