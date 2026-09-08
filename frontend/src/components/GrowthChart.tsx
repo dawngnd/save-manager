@@ -43,186 +43,191 @@ export const GrowthChart: React.FC<GrowthChartProps> = ({ deposits }) => {
   const chartInstanceRef = useRef<Chart | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
-  const [chartWidth, setChartWidth] = useState<number>(0);
 
   const data = generateStepWiseGrowthData(deposits);
+  const calcWidth = Math.min(Math.max(data.length * 55, 320), 4000);
 
   useEffect(() => {
     if (isCollapsed || data.length === 0 || !canvasRef.current) return;
 
-    // Defer to next frame so the scroll container has a layout width
-    const rafId = requestAnimationFrame(() => {
-      if (!canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const container = scrollContainerRef.current;
+    const containerWidth = container?.clientWidth || 320;
+    const actualWidth = Math.min(Math.max(calcWidth, containerWidth), 4000);
 
-      if (chartInstanceRef.current) {
-        chartInstanceRef.current.destroy();
+    // Safe DPR: đảm bảo buffer width không vượt quá giới hạn GPU texture trên iOS Safari (4096px)
+    const rawDpr = window.devicePixelRatio || 1;
+    const safeDpr = actualWidth * rawDpr <= 4096 ? rawDpr : 1;
+
+    if (chartInstanceRef.current) {
+      chartInstanceRef.current.destroy();
+      chartInstanceRef.current = null;
+    }
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Set kích thước cơ sở cho canvas, Chart.js sẽ tự scale theo safeDpr
+    canvas.style.width = `${actualWidth}px`;
+    canvas.style.height = '200px';
+    canvas.width = actualWidth;
+    canvas.height = 200;
+
+    // Tìm index tháng hiện tại
+    const now = new Date();
+    const currentMonthLabel = `${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+    const todayIndex = data.findIndex(d => d.date === currentMonthLabel);
+
+    // Custom plugin: vẽ đường xanh green tại tháng hiện tại
+    const todayLinePlugin = {
+      id: 'todayLine',
+      afterDraw(chart: Chart) {
+        if (todayIndex < 0) return;
+        const xScale = chart.scales['x'];
+        const yScale = chart.scales['y'];
+        if (!xScale || !yScale) return;
+        const x = xScale.getPixelForValue(todayIndex);
+        const drawCtx = chart.ctx;
+        drawCtx.save();
+        drawCtx.beginPath();
+        drawCtx.setLineDash([4, 4]);
+        drawCtx.strokeStyle = '#4caf50';
+        drawCtx.lineWidth = 2;
+        drawCtx.moveTo(x, yScale.top);
+        drawCtx.lineTo(x, yScale.bottom);
+        drawCtx.stroke();
+        drawCtx.setLineDash([]);
+        drawCtx.fillStyle = '#4caf50';
+        drawCtx.font = 'bold 10px sans-serif';
+        drawCtx.textAlign = 'center';
+        drawCtx.fillText('Hiện tại', x, yScale.top - 4);
+        drawCtx.restore();
       }
+    };
 
-      const ctx = canvasRef.current.getContext('2d');
-      if (!ctx) return;
-
-      // Tìm index tháng hiện tại
-      const now = new Date();
-      const currentMonthLabel = `${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
-      const todayIndex = data.findIndex(d => d.date === currentMonthLabel);
-
-      // Custom plugin: vẽ đường xanh green tại tháng hiện tại
-      const todayLinePlugin = {
-        id: 'todayLine',
-        afterDraw(chart: Chart) {
-          if (todayIndex < 0) return;
-          const xScale = chart.scales['x'];
-          const yScale = chart.scales['y'];
-          if (!xScale || !yScale) return;
-          const x = xScale.getPixelForValue(todayIndex);
-          const drawCtx = chart.ctx;
-          drawCtx.save();
-          drawCtx.beginPath();
-          drawCtx.setLineDash([4, 4]);
-          drawCtx.strokeStyle = '#4caf50';
-          drawCtx.lineWidth = 2;
-          drawCtx.moveTo(x, yScale.top);
-          drawCtx.lineTo(x, yScale.bottom);
-          drawCtx.stroke();
-          drawCtx.setLineDash([]);
-          drawCtx.fillStyle = '#4caf50';
-          drawCtx.font = 'bold 10px sans-serif';
-          drawCtx.textAlign = 'center';
-          drawCtx.fillText('Hiện tại', x, yScale.top - 4);
-          drawCtx.restore();
-        }
-      };
-
-      // 100px mỗi tháng, tối thiểu = container (fallback 300 cho mobile)
-      const containerWidth = scrollContainerRef.current?.clientWidth || 300;
-      const calcWidth = Math.max(data.length * 100, containerWidth);
-      setChartWidth(calcWidth);
-
-      // Set canvas size thủ công — responsive:false để Chart.js không co canvas về container
-      const canvasHeight = 200;
-      const dpr = window.devicePixelRatio || 1;
-      canvasRef.current!.width = calcWidth * dpr;
-      canvasRef.current!.height = canvasHeight * dpr;
-      canvasRef.current!.style.width = calcWidth + 'px';
-      canvasRef.current!.style.height = canvasHeight + 'px';
-      ctx.scale(dpr, dpr);
-
-      chartInstanceRef.current = new Chart(ctx, {
-        plugins: [todayLinePlugin],
-        type: 'line',
-        data: {
-          labels: data.map(d => d.date),
-          datasets: [
-            {
-              label: 'Tổng tài sản',
-              data: data.map(d => d.total),
-              borderColor: '#64b5f6',
-              backgroundColor: 'rgba(100, 181, 246, 0.08)',
-              fill: true,
-              tension: 0,
-              pointRadius: 3,
-              pointBackgroundColor: '#64b5f6',
-              pointHoverRadius: 6,
-              borderWidth: 2,
-            },
-            {
-              label: 'Vốn gốc',
-              data: data.map(d => d.baseline),
-              borderColor: '#ff9800',
-              backgroundColor: 'transparent',
-              fill: false,
-              tension: 0,
-              pointRadius: 2,
-              pointBackgroundColor: '#ff9800',
-              pointHoverRadius: 5,
-              borderWidth: 1.5,
-              borderDash: [6, 3],
-            }
-          ]
+    chartInstanceRef.current = new Chart(ctx, {
+      plugins: [todayLinePlugin],
+      type: 'line',
+      data: {
+        labels: data.map(d => d.date),
+        datasets: [
+          {
+            label: 'Tổng tài sản',
+            data: data.map(d => d.total),
+            borderColor: '#64b5f6',
+            backgroundColor: 'rgba(100, 181, 246, 0.08)',
+            fill: true,
+            tension: 0,
+            pointRadius: 3,
+            pointBackgroundColor: '#64b5f6',
+            pointHoverRadius: 6,
+            borderWidth: 2,
+          },
+          {
+            label: 'Vốn gốc',
+            data: data.map(d => d.baseline),
+            borderColor: '#ff9800',
+            backgroundColor: 'transparent',
+            fill: false,
+            tension: 0,
+            pointRadius: 2,
+            pointBackgroundColor: '#ff9800',
+            pointHoverRadius: 5,
+            borderWidth: 1.5,
+            borderDash: [6, 3],
+          }
+        ]
+      },
+      options: {
+        responsive: false,
+        maintainAspectRatio: false,
+        devicePixelRatio: safeDpr,
+        layout: {
+          padding: { top: 16 }
         },
-        options: {
-          responsive: false,
-          maintainAspectRatio: false,
-          layout: {
-            padding: { top: 16 }
-          },
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              mode: 'index',
-              intersect: false,
-              backgroundColor: '#17212b',
-              titleColor: '#64b5f6',
-              bodyColor: '#f5f5f5',
-              borderColor: '#2b394a',
-              borderWidth: 1,
-              callbacks: {
-                label: function (context) {
-                  const index = context.dataIndex;
-                  const point = data[index];
-                  const val = context.parsed.y ?? 0;
-                  if (context.dataset.label === 'Vốn gốc') {
-                    return `Vốn gốc: ${val.toLocaleString('vi-VN')} ₫`;
-                  }
-                  if (point) {
-                    return [
-                      `Tổng: ${val.toLocaleString('vi-VN')} ₫`,
-                      `Lãi tích lũy: ${point.interest.toLocaleString('vi-VN')} ₫`,
-                      `Vốn gốc: ${point.baseline.toLocaleString('vi-VN')} ₫`
-                    ];
-                  }
-                  return `${val.toLocaleString('vi-VN')} ₫`;
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            mode: 'index',
+            intersect: false,
+            backgroundColor: '#17212b',
+            titleColor: '#64b5f6',
+            bodyColor: '#f5f5f5',
+            borderColor: '#2b394a',
+            borderWidth: 1,
+            callbacks: {
+              label: function (context) {
+                const index = context.dataIndex;
+                const point = data[index];
+                const val = context.parsed.y ?? 0;
+                if (context.dataset.label === 'Vốn gốc') {
+                  return `Vốn gốc: ${val.toLocaleString('vi-VN')} ₫`;
                 }
+                if (point) {
+                  return [
+                    `Tổng: ${val.toLocaleString('vi-VN')} ₫`,
+                    `Lãi tích lũy: ${point.interest.toLocaleString('vi-VN')} ₫`,
+                    `Vốn gốc: ${point.baseline.toLocaleString('vi-VN')} ₫`
+                  ];
+                }
+                return `${val.toLocaleString('vi-VN')} ₫`;
               }
             }
-          },
-          scales: {
-            x: {
-              grid: {
-                color: 'rgba(44, 56, 71, 0.3)',
-              },
-              ticks: {
-                color: '#708499',
-                font: { size: 11 },
-                maxRotation: 0,
-                minRotation: 0,
-              }
+          }
+        },
+        scales: {
+          x: {
+            grid: {
+              color: 'rgba(44, 56, 71, 0.3)',
             },
-            y: {
-              grid: {
-                color: 'rgba(44, 56, 71, 0.3)',
-              },
-              ticks: {
-                color: '#708499',
-                font: { size: 10 },
-                callback: function (value) {
-                  return (Number(value) / 1000000).toLocaleString('vi-VN') + 'M';
-                }
+            ticks: {
+              color: '#708499',
+              font: { size: 11 },
+              maxRotation: 0,
+              minRotation: 0,
+            }
+          },
+          y: {
+            grid: {
+              color: 'rgba(44, 56, 71, 0.3)',
+            },
+            ticks: {
+              color: '#708499',
+              font: { size: 10 },
+              callback: function (value) {
+                return (Number(value) / 1000000).toLocaleString('vi-VN') + 'M';
               }
             }
           }
         }
-      });
-
-      // Scroll tới tháng hiện tại (canh giữa viewport)
-      if (scrollContainerRef.current) {
-        if (todayIndex >= 0) {
-          const scrollTarget = (todayIndex / data.length) * calcWidth - containerWidth / 2;
-          scrollContainerRef.current.scrollLeft = Math.max(0, scrollTarget);
-        } else {
-          scrollContainerRef.current.scrollLeft = scrollContainerRef.current.scrollWidth;
-        }
       }
     });
 
+    // Scroll tới tháng hiện tại (canh giữa viewport)
+    let scrollTimer: any;
+    if (container) {
+      scrollTimer = setTimeout(() => {
+        if (todayIndex >= 0) {
+          const scrollTarget = (todayIndex / data.length) * actualWidth - containerWidth / 2;
+          container.scrollLeft = Math.max(0, scrollTarget);
+        } else {
+          container.scrollLeft = container.scrollWidth;
+        }
+      }, 60);
+    }
+
     return () => {
-      cancelAnimationFrame(rafId);
+      if (scrollTimer) clearTimeout(scrollTimer);
       if (chartInstanceRef.current) {
         chartInstanceRef.current.destroy();
         chartInstanceRef.current = null;
       }
+      if (canvas) {
+        canvas.width = 1;
+        canvas.height = 1;
+      }
     };
-  }, [isCollapsed, deposits, data.length]);
+  }, [isCollapsed, deposits, data.length, calcWidth]);
 
   if (data.length === 0) {
     return (
@@ -275,7 +280,7 @@ export const GrowthChart: React.FC<GrowthChartProps> = ({ deposits }) => {
             className="w-full overflow-x-auto overflow-y-hidden chart-scroll"
             style={{ WebkitOverflowScrolling: 'touch' }}
           >
-            <div style={{ width: chartWidth > 0 ? `${chartWidth}px` : '100%' }}>
+            <div style={{ width: `${calcWidth}px`, minWidth: '100%', height: '200px', position: 'relative' }}>
               <canvas ref={canvasRef} />
             </div>
           </div>
